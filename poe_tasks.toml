@@ -1,0 +1,27 @@
+[tasks.build]
+help = "Builds the wheels"
+script = "scripts.build:main"
+
+[tasks.check]
+help = "Runs all checks"
+sequence = ["lint"]
+
+[tasks.fix-python]
+help = "Fixes python lint errors where possible"
+cmd = "ruff check --fix --unsafe-fixes --exit-zero ."
+
+[tasks.format-python]
+help = "Format python code"
+cmd = "ruff format ."
+
+[tasks.format]
+help = "Formats code"
+sequence = ["fix-python", "format-python"]
+
+[tasks.lint-python]
+help = "Lints python code"
+cmd = "ruff check ."
+
+[tasks.lint]
+help = "Lints code"
+sequence = ["lint-python"]
