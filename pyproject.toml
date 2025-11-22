@@ -4,6 +4,25 @@ version = "1.36.2"
 description = "A Python wheel distribution of the Envoy server"
 readme = "README.md"
 requires-python = ">=3.10"
+keywords = ["envoy"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: Proxy Servers",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: System :: Networking",
+]
 
 [dependency-groups]
 dev = ["poethepoet", "pyright[nodejs]", "ruff", "toml", "wheel"]
