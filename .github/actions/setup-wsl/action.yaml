@@ -46,6 +46,7 @@ runs:
         sudo systemctl start docker.service
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
+        docker context ls
         # 4. Health Check Loop
         echo "Waiting for Docker Daemon..."
         for i in {1..30}; do
