@@ -18,8 +18,6 @@ runs:
     - name: setup docker CE
       shell: wsl-bash {0}
       run: |
-        for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
-
         sudo apt-get update
         sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
