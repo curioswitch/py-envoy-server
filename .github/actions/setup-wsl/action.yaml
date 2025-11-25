@@ -46,7 +46,7 @@ runs:
         sudo systemctl enable docker.service
         sudo systemctl start docker.service
 
-        sudo ifconfig -a
+        sudo ip addr
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
         docker context ls
