@@ -89,13 +89,17 @@ def _handle_path(
         drive_letter = parent_dir.drive[:-1].lower()
         # Skip the drive and convert
         rel_parts = parent_dir.parts[1:]
-        docker_dir = (
-            f"/{drive_letter}/{'/'.join(rel_parts)}"
+        wsl_dir = (
+            f"/mnt/{drive_letter}/{'/'.join(rel_parts)}"
             if rel_parts
-            else f"/{drive_letter}"
+            else f"/mnt/{drive_letter}"
         )
 
-        docker_path = docker_dir if path.is_dir() else f"{docker_dir}/{path.name}"
+        docker_path = wsl_dir if path.is_dir() else f"{wsl_dir}/{path.name}"
 
         args.extend([f"--{arg_name}", docker_path])
-        volume_mounts.append(f"-v{parent_dir}:{docker_dir}:rw")
+        # It should be fine using the wsl directory corresponding to the Windows folder
+        # for the host side to support vanilla docker. Docker Desktop would also allow
+        # using native paths, and while it may be commonly used, we can't really use it
+        # in CI - this should work with either.
+        volume_mounts.append(f"-v{wsl_dir}:{wsl_dir}:rw")

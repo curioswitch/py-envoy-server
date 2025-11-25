@@ -1,10 +1,10 @@
 [tasks.build]
-help = "Builds the wheels"
-script = "scripts.build:main"
+help = "Builds the project for the current platform"
+script = "scripts.build:build"
 
 [tasks.check]
 help = "Runs all checks"
-sequence = ["lint"]
+sequence = ["lint", "test"]
 
 [tasks.fix-python]
 help = "Fixes python lint errors where possible"
@@ -25,3 +25,12 @@ cmd = "ruff check ."
 [tasks.lint]
 help = "Lints code"
 sequence = ["lint-python"]
+
+[tasks.test]
+help = "Runs tests"
+deps = ["build"]
+cmd = "pytest"
+
+[tasks.wheels]
+help = "Builds the wheels"
+script = "scripts.build:wheels"
