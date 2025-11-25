@@ -18,7 +18,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-15
+          - ubuntu-24.04
+          - windows-2025
+    runs-on: ${{ matrix.os }}
     environment: ${{ github.event_name != 'pull_request' && 'dev' || null }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -31,10 +38,11 @@ jobs:
 
       - run: uv run poe check
 
-      - run: uv run poe build
+      - run: uv run poe wheels
+        if: startsWith(matrix.os, 'ubuntu-')
 
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && startsWith(matrix.os, 'ubuntu-')
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true

@@ -27,7 +27,15 @@ classifiers = [
 ]
 
 [dependency-groups]
-dev = ["poethepoet", "pyright[nodejs]", "ruff", "toml", "wheel"]
+dev = [
+    "httpx",
+    "poethepoet",
+    "pyright[nodejs]",
+    "pytest",
+    "ruff",
+    "toml",
+    "wheel",
+]
 
 [project.scripts]
 envoy = "envoy._main:main"
