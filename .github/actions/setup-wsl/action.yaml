@@ -12,6 +12,7 @@ runs:
         memory=4GB
         swap=0
         networkingMode=mirrored
+        dnsTunneling=true
         "@
         $config | Out-File -Append -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
         cat "$env:USERPROFILE\.wslconfig"
@@ -26,7 +27,7 @@ runs:
       shell: wsl-bash {0}
       run: |
         sudo apt-get update
-        sudo apt-get install -y ca-certificates curl jq
+        sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
