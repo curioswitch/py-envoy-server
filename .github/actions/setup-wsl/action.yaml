@@ -33,11 +33,9 @@ runs:
         sudo apt-get update
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-        sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
-
         # 1. Configure daemon.json for nftables backend and IP forwarding
         # Note: nftables backend does not enable ip-forward by default, so we force it.
-        #echo '{ "firewall-backend": "nftables", "ip-forward": true }' | sudo tee /etc/docker/daemon.json
+        echo '{ "firewall-backend": "nftables", "ip-forward": true }' | sudo tee /etc/docker/daemon.json
 
         # 2. Modify Systemd Service to listen on TCP 2375
         # This exposes the daemon so Windows can talk to it.
@@ -68,8 +66,7 @@ runs:
     - name: allow docker access from Windows
       shell: pwsh
       run: |
-        New-NetFirewallRule -DisplayName 'Docker Inbound' -Profile @('Domain', 'Public', 'Private') -Direction Inbound -Action Allow -Protocol TCP -LocalPort 2375
-        echo "DOCKER_HOST=tcp://$(wsl hostname -I | awk '{print $1}'):2375" >> $env:GITHUB_ENV
+        echo "DOCKER_HOST=tcp://1270.0.0.1:2375" >> $env:GITHUB_ENV
 
     - name: Verify Docker Bridge from Windows
       shell: pwsh
