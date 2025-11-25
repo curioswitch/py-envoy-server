@@ -36,8 +36,6 @@ def test_runs():
                     "--log-level",
                     "error",
                 ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
                 text=True,
             )
 
