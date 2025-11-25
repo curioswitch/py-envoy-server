@@ -54,6 +54,8 @@ runs:
 
         sudo ip addr
 
+        sudo ufw default allow incoming
+
         export DOCKER_HOST=tcp://127.0.0.1:2375
         docker context ls
         # 4. Health Check Loop
