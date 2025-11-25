@@ -25,9 +25,10 @@ def run_with_docker() -> None:
     paths rw.
     """
 
-    if not shutil.which("docker"):
+    docker_path = shutil.which("docker")
+    if not docker_path:
         msg = (
-            "This platform requires Docker to run Envoy, but docker could not be found. "
+            "This platform requires Docker to run Envoy, but Docker could not be found. "
             "Ensure it is installed and available."
         )
         raise RuntimeError(msg)
@@ -69,7 +70,7 @@ def run_with_docker() -> None:
         f"envoyproxy/envoy:distroless-v{version}",
         *envoy_args,
     ]
-    os.execvp("docker", docker_cmd)  # noqa: S606, S607
+    os.execv(docker_path, docker_cmd)  # noqa: S606
 
 
 def _handle_path(
