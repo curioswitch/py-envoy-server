@@ -80,7 +80,7 @@ runs:
         # Keep wsl alive for the step
         Start-Job -ScriptBlock { wsl sleep infinity } | Out-Null
         wsl --list --verbose
-        wsl docker context ls
+        wsl docker version
         docker context ls
         docker version
         docker pull envoyproxy/envoy:linux-amd64
