@@ -36,9 +36,9 @@ runs:
         # Note: nftables backend does not enable ip-forward by default, so we force it.
         echo '{ "firewall-backend": "nftables", "ip-forward": true }' | sudo tee /etc/docker/daemon.json
 
-        # 2. Modify Systemd Service to listen on TCP 12375
+        # 2. Modify Systemd Service to listen on TCP 2375
         # This exposes the daemon so Windows can talk to it.
-        sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:12375|' /lib/systemd/system/docker.service
+        sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:2375|' /lib/systemd/system/docker.service
 
         # 3. Reload and Restart
         sudo systemctl daemon-reload
@@ -64,7 +64,7 @@ runs:
         Get-NetAdapter | Where-Object Name -Like "*WSL*" | ForEach-Object {
             New-NetFirewallRule -DisplayName "Allow WSL Inbound" -Direction Inbound -InterfaceAlias $_.Name -Action Allow
         }
-        echo "DOCKER_HOST=tcp://127.0.0.1:12375" >> $env:GITHUB_ENV
+        echo "DOCKER_HOST=tcp://127.0.0.1:2375" >> $env:GITHUB_ENV
 
     - name: Verify Docker Bridge from Windows
       shell: pwsh
