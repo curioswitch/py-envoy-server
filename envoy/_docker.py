@@ -43,18 +43,13 @@ def run_with_docker() -> None:
     volume_mounts: list[str] = []
 
     paths, envoy_args = parser.parse_known_args(namespace=EnvoyArgs())
-    if paths.admin_address_path:
-        _handle_path(
-            "admin-address-path", paths.admin_address_path, volume_mounts, envoy_args
-        )
-    if paths.base_id_path:
-        _handle_path("base-id-path", paths.base_id_path, volume_mounts, envoy_args)
-    if paths.config_path:
-        _handle_path("config-path", paths.config_path, volume_mounts, envoy_args)
-    if paths.log_path:
-        _handle_path("log-path", paths.log_path, volume_mounts, envoy_args)
-    if paths.socket_path:
-        _handle_path("socket-path", paths.socket_path, volume_mounts, envoy_args)
+    _handle_path(
+        "admin-address-path", paths.admin_address_path, volume_mounts, envoy_args
+    )
+    _handle_path("base-id-path", paths.base_id_path, volume_mounts, envoy_args)
+    _handle_path("config-path", paths.config_path, volume_mounts, envoy_args)
+    _handle_path("log-path", paths.log_path, volume_mounts, envoy_args)
+    _handle_path("socket-path", paths.socket_path, volume_mounts, envoy_args)
 
     version = metadata.version("envoy-server")
     if (post_idx := version.find(".post")) >= 0:
