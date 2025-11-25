@@ -11,8 +11,7 @@ runs:
         [wsl2]
         memory=4GB
         swap=0
-        networkingMode=mirrored
-        dnsTunneling=true
+        firewall=false
         "@
         $config | Out-File -Append -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
         cat "$env:USERPROFILE\.wslconfig"
