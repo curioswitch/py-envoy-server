@@ -4,13 +4,7 @@ description: Setup WSL2 environment with Docker support
 runs:
   using: composite
   steps:
-    - uses: vampire/setup-wsl@6a8db447be7ed35f2f499c02c6e60ff77ef11278 # v6.0.0
-      with:
-        distribution: Ubuntu-24.04
-        use-cache: true
-        set-as-default: true
-
-    - name: configure wsl2
+    - name: configure WSL
       shell: pwsh
       run: |
         $config = @"
@@ -19,7 +13,14 @@ runs:
         swap=0
         networkingMode=mirrored
         "@
-        $config | Out-File -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
+        $config | Out-File -Append -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
+        cat "$env:USERPROFILE\.wslconfig"
+
+    - uses: vampire/setup-wsl@6a8db447be7ed35f2f499c02c6e60ff77ef11278 # v6.0.0
+      with:
+        distribution: Ubuntu-24.04
+        use-cache: true
+        set-as-default: true
 
     - name: setup docker CE
       shell: wsl-bash {0}
