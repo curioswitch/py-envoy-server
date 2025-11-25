@@ -13,7 +13,7 @@ runs:
     - name: configure wsl2
       shell: pwsh
       run: |
-        $config = "[wsl2]`nmemory=4GB`nswap=0"
+        $config = "[wsl2]`nmemory=4GB`nswap=0`n[experimental]`nautoMemoryReclaim=disabled"
         $config | Out-File -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
 
     - name: setup docker CE
@@ -63,6 +63,14 @@ runs:
         echo "Docker Daemon failed to start."
         exit 1
 
+    # WSL usually terminates if there are no processes running.
+    - name: WSL Background task
+      shell: wsl-bash {0}
+      run: |
+        sleep infinity &
+        disown
+        echo "WSL keepalive process started"
+
     - name: Allow WSL Inbound Traffic and set DOCKER_HOST
       shell: pwsh
       run: |
@@ -78,5 +86,5 @@ runs:
         docker context ls
         docker version
         docker pull envoyproxy/envoy:linux-amd64
-        docker inspect envoyproxy/envoy:linux-amd64 | Select-String "Architecture"
         wsl --list --verbose
+        docker inspect envoyproxy/envoy:linux-amd64 | Select-String "Architecture"
