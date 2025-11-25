@@ -32,7 +32,7 @@ jobs:
 
       # By default, docker would try to use Windows containers but we want to use
       # Linux, which will match any conceivable setup for developers using docker
-      - uses: ./.github/actions/setup-wsl.yaml
+      - uses: ./.github/actions/setup-wsl
         if: startsWith(matrix.os, 'windows-')
 
       - uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
