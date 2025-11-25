@@ -33,6 +33,8 @@ runs:
         sudo apt-get update
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+        sudo update-alternatives --config iptables iptables-legacy
+
         # 1. Configure daemon.json for nftables backend and IP forwarding
         # Note: nftables backend does not enable ip-forward by default, so we force it.
         #echo '{ "firewall-backend": "nftables", "ip-forward": true }' | sudo tee /etc/docker/daemon.json
