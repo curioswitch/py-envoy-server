@@ -21,6 +21,8 @@ def main() -> None:
 
     pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")
     version = f"v{pyproject['project']['version']}"
+    if (post_idx := version.find(".post")) >= 0:
+        version = version[:post_idx]
 
     for os in ("linux", "darwin"):
         for arch in ("amd64", "arm64"):
