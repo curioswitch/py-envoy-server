@@ -34,8 +34,7 @@ jobs:
       # Linux, which will match any conceivable setup for developers using docker
       - name: Set up Docker for Linux containers
         if: startsWith(matrix.os, 'windows-')
-        run: |
-          & "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
+        run: DockerCli.exe -SwitchLinuxEngine
         shell: pwsh
 
       - uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
