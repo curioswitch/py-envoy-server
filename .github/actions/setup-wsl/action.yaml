@@ -63,17 +63,12 @@ runs:
         echo "Docker Daemon failed to start."
         exit 1
 
-    # WSL usually terminates if there are no processes running.
-    - name: WSL Background task
-      shell: wsl-bash {0}
-      run: |
-        sleep infinity &
-        disown
-        echo "WSL keepalive process started"
-
-    - name: Allow WSL Inbound Traffic and set DOCKER_HOST
+    - name: allow docker access from Windows
       shell: pwsh
       run: |
+        # Start a background WSL process to keep it alive
+        Start-Job -ScriptBlock { wsl sleep infinity } | Out-Null
+
         Get-NetAdapter | Where-Object Name -Like "*WSL*" | ForEach-Object {
             New-NetFirewallRule -DisplayName "Allow WSL Inbound" -Direction Inbound -InterfaceAlias $_.Name -Action Allow
         }
