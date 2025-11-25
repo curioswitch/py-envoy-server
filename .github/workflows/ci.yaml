@@ -32,9 +32,8 @@ jobs:
 
       # By default, docker would try to use Windows containers but we want to use
       # Linux, which will match any conceivable setup for developers using docker
-      - name: Set up Docker for Linux containers
+      - uses: ./.github/actions/setup-wsl.yaml
         if: startsWith(matrix.os, 'windows-')
-        run: docker context ls
 
       - uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
 
