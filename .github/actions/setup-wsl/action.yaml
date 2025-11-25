@@ -71,6 +71,7 @@ runs:
     - name: Verify Docker Bridge from Windows
       shell: pwsh
       run: |
+        wsl --list --verbose
         docker context ls
         docker version
         docker pull envoyproxy/envoy:linux-amd64
