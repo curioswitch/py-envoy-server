@@ -8,6 +8,7 @@ runs:
       with:
         distribution: Ubuntu-24.04
         use-cache: true
+        set-as-default: true
 
     - name: configure wsl2
       shell: pwsh
@@ -59,6 +60,8 @@ runs:
         done
         echo "Docker Daemon failed to start."
         exit 1
+
+        sudo ifconfig -a
 
     - name: Allow WSL Inbound Traffic and set DOCKER_HOST
       shell: pwsh
