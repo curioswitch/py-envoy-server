@@ -1,0 +1,65 @@
+name: Setup WSL
+description: Setup WSL2 environment with Docker support
+
+runs:
+  using: composite
+  steps:
+    - uses: Vampire/setup-wsl@6a8db447be7ed35f2f499c02c6e60ff77ef11278 # v6.0.0
+      with:
+        update: true
+        cache: true
+        set-as-default: true
+
+    - name: Configure WSL2 Limits
+      shell: pwsh
+      run: |
+        $config = "[wsl2]`nmemory=4GB`nswap=0"
+        $config | Out-File -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
+
+    - name: Install Docker (Native Package)
+      shell: wsl-bash {0}
+      run: |
+        sudo apt-get update
+        # CRITICAL: Debian 12 uses nftables by default. Docker often fails to start.
+        # Switch to legacy iptables to ensure stability.
+        sudo apt-get install -y iptables
+        sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+        sudo apt-get install -y docker.io
+
+    - name: Configure Docker TCP Socket
+      shell: wsl-bash {0}
+      run: |
+        # Modify service to listen on TCP 12375
+        sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:12375|' /lib/systemd/system/docker.service
+
+        sudo systemctl daemon-reload
+        sudo systemctl enable docker.service
+        sudo systemctl start docker.service
+
+        echo "Waiting for Docker Daemon to initialize..."
+        for i in {1..30}; do
+          if sudo docker info > /dev/null 2>&1; then
+            echo "Docker Daemon is ACTIVE."
+            exit 0
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 1
+        done
+        echo "Docker Daemon failed to start."
+        exit 1
+
+    - name: Allow WSL Inbound Traffic and set DOCKER_HOST
+      shell: pwsh
+      run: |
+        Get-NetAdapter | Where-Object Name -Like "*WSL*" | ForEach-Object {
+            New-NetFirewallRule -DisplayName "Allow WSL Inbound" -Direction Inbound -InterfaceAlias $_.Name -Action Allow
+        }
+        echo "DOCKER_HOST=tcp://127.0.0.1:12375" >> $env:GITHUB_ENV
+
+    - name: Verify Docker Bridge from Windows
+      shell: pwsh
+      run: |
+        docker context ls
+        docker version
+        docker pull envoyproxy/envoy:linux-amd64
+        docker inspect envoyproxy/envoy:linux-amd64 | Select-String "Architecture"
