@@ -79,3 +79,4 @@ runs:
         docker version
         docker pull envoyproxy/envoy:linux-amd64
         docker inspect envoyproxy/envoy:linux-amd64 | Select-String "Architecture"
+        wsl --list --verbose
