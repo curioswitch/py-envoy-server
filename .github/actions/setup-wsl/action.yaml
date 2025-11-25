@@ -6,8 +6,10 @@ runs:
   steps:
     - uses: Vampire/setup-wsl@6a8db447be7ed35f2f499c02c6e60ff77ef11278 # v6.0.0
       with:
+        # Can't use Debian because of https://github.com/Vampire/setup-wsl/issues/76
+        distribution: Ubuntu-22.04
         update: true
-        cache: true
+        use-cache: true
         set-as-default: true
 
     - name: Configure WSL2 Limits
@@ -20,8 +22,6 @@ runs:
       shell: wsl-bash {0}
       run: |
         sudo apt-get update
-        # CRITICAL: Debian 12 uses nftables by default. Docker often fails to start.
-        # Switch to legacy iptables to ensure stability.
         sudo apt-get install -y iptables
         sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
         sudo apt-get install -y docker.io
