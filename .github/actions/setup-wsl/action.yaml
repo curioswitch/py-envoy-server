@@ -13,7 +13,12 @@ runs:
     - name: configure wsl2
       shell: pwsh
       run: |
-        $config = "[wsl2]\nmemory=4GB\nswap=0\n[experimental]\nautoMemoryReclaim=disabled"
+        $config = @"
+        [wsl2]
+        memory=4GB
+        swap=0
+        networkingMode=mirrored
+        "@
         $config | Out-File -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
 
     - name: setup docker CE
