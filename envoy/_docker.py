@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import platform
 import shutil
 from importlib import metadata
 from pathlib import Path
@@ -56,21 +55,9 @@ def run_with_docker() -> None:
     if (post_idx := version.find(".post")) >= 0:
         version = version[:post_idx]
 
-    machine = platform.machine().lower()
-    match machine:
-        case "x86_64" | "amd64":
-            arch = "amd64"
-        case "aarch64" | "arm64":
-            arch = "arm64"
-        case _:
-            msg = f"Unsupported architecture for Docker Envoy: {machine}"
-            raise RuntimeError(msg)
-
     docker_cmd = [
         "docker",
         "run",
-        "--platform",
-        f"linux/{arch}",
         "--rm",
         "--network",
         "host",

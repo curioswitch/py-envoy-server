@@ -30,6 +30,14 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+      # By default, docker would try to use Windows containers but we want to use
+      # Linux, which will match any conceivable setup for developers using docker
+      - name: Set up Docker for Linux containers
+        if: startsWith(matrix.os, 'windows-')
+        run: |
+          & "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
+        shell: pwsh
+
       - uses: astral-sh/setup-uv@5a7eac68fb9809dea845d802897dc5c723910fa3 # v7.1.3
 
       - run: uv lock --check
