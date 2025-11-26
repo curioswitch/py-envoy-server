@@ -23,7 +23,6 @@ def test_runs():
 
     with NamedTemporaryFile("r", delete_on_close=True) as admin_address_file:
         admin_address_file.close()
-        Path(admin_address_file.name).read_text()
         process = None
 
         def run_envoy():
