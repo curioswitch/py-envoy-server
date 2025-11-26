@@ -44,6 +44,7 @@ runs:
         sudo systemctl daemon-reload
         sudo systemctl enable docker.service
         sudo systemctl start docker.service
+        ps -ef | grep docker
 
         sudo ip addr
 
