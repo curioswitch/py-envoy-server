@@ -24,8 +24,7 @@ jobs:
         os:
           - macos-15
           - ubuntu-24.04
-          # TODO: Figure out how to get docker + WSL to work on GitHub
-          # - windows-2025
+          - windows-2025
     runs-on: ${{ matrix.os }}
     environment: ${{ github.event_name != 'pull_request' && 'dev' || null }}
     steps:

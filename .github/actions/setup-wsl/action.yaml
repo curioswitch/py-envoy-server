@@ -74,6 +74,10 @@ runs:
         Start-Job -ScriptBlock { wsl sleep infinity } | Out-Null
         wsl --list --verbose
         wsl docker version
+        wsl --exec ss -tulpn
+        wsl --exec cat /etc/wsl.conf
+        Get-NetFirewallRule -DisplayName "Allow WSL Docker"
+
         docker context ls
         docker version
         docker pull envoyproxy/envoy:linux-amd64
