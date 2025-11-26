@@ -21,7 +21,9 @@ def test_runs():
     # admin_address_file will always be an absolute path, and we check relative path here
     config_path = config_path.relative_to(Path.cwd())
 
-    with NamedTemporaryFile("r") as admin_address_file:
+    with NamedTemporaryFile("r", delete_on_close=True) as admin_address_file:
+        admin_address_file.close()
+        Path(admin_address_file.name).read_text()
         process = None
 
         def run_envoy():
