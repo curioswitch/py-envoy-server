@@ -9,12 +9,13 @@ runs:
         distribution: Ubuntu-24.04
         use-cache: true
         set-as-default: true
+        additional-packages: ca-certificates curl
 
     - name: setup docker CE
       shell: wsl-bash {0}
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ca-certificates curl
+        # Use docker's apt repo for newer versions that support modern Windows networking features
+        # for better stability.
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -27,11 +28,12 @@ runs:
         sudo apt-get update
         sudo apt-get install -y docker-ce docker-ce-cli
 
+        # We listen on TCP to easily access from Windows
         sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:2375|' /lib/systemd/system/docker.service
-
         sudo systemctl daemon-reload
         sudo systemctl restart docker.service
 
+        # This magic command allows WSL to run in the background forever
         sudo dbus-launch true
 
         export DOCKER_HOST=tcp://127.0.0.1:2375

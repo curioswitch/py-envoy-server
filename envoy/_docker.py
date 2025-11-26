@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
-import sys
 from importlib import metadata
 from pathlib import Path
 
@@ -59,8 +58,6 @@ def run_with_docker() -> None:
     docker_cmd = [
         "docker",
         "run",
-        "--name",
-        "envoy",
         "--rm",
         "--network",
         "host",
@@ -68,9 +65,6 @@ def run_with_docker() -> None:
         f"envoyproxy/envoy:distroless-v{version}",
         *envoy_args,
     ]
-    print(  # noqa: T201
-        "Running Envoy in Docker with command:", " ".join(docker_cmd), file=sys.stderr
-    )
     os.execv(docker_path, docker_cmd)  # noqa: S606
 
 
