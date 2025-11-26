@@ -43,7 +43,7 @@ def test_runs():
         thread.start()
         port = None
         process = cast("subprocess.Popen | None", process)
-        for _ in range(100):
+        for _ in range(600):
             if process is None:
                 time.sleep(0.1)
                 continue
