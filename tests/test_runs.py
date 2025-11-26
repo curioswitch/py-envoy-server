@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -49,7 +50,14 @@ def test_runs():
                 continue
             assert process.returncode is None, "Envoy process exited prematurely"
             with contextlib.suppress(Exception):
-                admin_address = Path(admin_address_file.name).read_text()
+                try:
+                    admin_address = Path(admin_address_file.name).read_text()
+                except Exception:
+                    print(  # noqa: T201
+                        "Waiting for admin address file to be populated",
+                        file=sys.stderr,
+                    )
+                    admin_address = None
                 if admin_address:
                     response = httpx.get(
                         f"http://{admin_address}/listeners?format=json"

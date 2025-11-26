@@ -52,6 +52,8 @@ runs:
         echo "Docker Daemon failed to start."
         exit 1
 
+        ls -al /mnt
+
     - name: allow docker access from Windows
       shell: pwsh
       run: |
