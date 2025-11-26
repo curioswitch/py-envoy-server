@@ -57,6 +57,7 @@ def test_runs():
                         "Waiting for admin address file to be populated",
                         file=sys.stderr,
                     )
+                    subprocess.run(["docker", "ps"], check=False)
                     admin_address = None
                 if admin_address:
                     response = httpx.get(

@@ -39,6 +39,7 @@ runs:
 
         sudo dbus-launch true
         ls -al /mnt
+        ls -al /mnt/c/Users/runneradmin/AppData/Local/Temp
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
         echo "Waiting for Docker Daemon..."
