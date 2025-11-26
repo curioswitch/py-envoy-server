@@ -54,6 +54,7 @@ def test_runs():
             except Exception as e:
                 print(f"Error reading admin address file: {e}", file=sys.stderr)  # noqa: T201
                 admin_address = None
+                subprocess.run(["docker", "logs", "envoy"], check=False)
             try:
                 if admin_address:
                     print(f"Got admin address: {admin_address}", file=sys.stderr)  # noqa: T201
