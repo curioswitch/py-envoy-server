@@ -65,6 +65,7 @@ def run_with_docker() -> None:
         f"envoyproxy/envoy:distroless-v{version}",
         *envoy_args,
     ]
+    print("Running Envoy in Docker with command:", " ".join(docker_cmd))
     os.execv(docker_path, docker_cmd)  # noqa: S606
 
 
