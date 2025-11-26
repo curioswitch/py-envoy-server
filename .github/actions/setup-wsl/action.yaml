@@ -38,6 +38,7 @@ runs:
         sudo systemctl restart docker.service
 
         sudo dbus-launch true
+        ls -al /mnt
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
         echo "Waiting for Docker Daemon..."
@@ -51,8 +52,6 @@ runs:
         done
         echo "Docker Daemon failed to start."
         exit 1
-
-        ls -al /mnt
 
     - name: allow docker access from Windows
       shell: pwsh
