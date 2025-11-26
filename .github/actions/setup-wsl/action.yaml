@@ -39,11 +39,11 @@ runs:
         # 2. Modify Systemd Service to listen on TCP 2375
         # This exposes the daemon so Windows can talk to it.
         sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:2375|' /lib/systemd/system/docker.service
+        cat /lib/systemd/system/docker.service
 
         # 3. Reload and Restart
         sudo systemctl daemon-reload
-        sudo systemctl enable docker.service
-        sudo systemctl start docker.service
+        sudo systemctl restart docker.service
         ps -ef | grep docker
 
         sudo ip addr
