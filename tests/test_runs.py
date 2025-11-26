@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import shutil
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path
@@ -50,16 +49,9 @@ def test_runs():
                 continue
             assert process.returncode is None, "Envoy process exited prematurely"
             with contextlib.suppress(Exception):
-                try:
-                    admin_address = Path(admin_address_file.name).read_text()
-                except Exception as e:
-                    print(  # noqa: T201
-                        f"Waiting for admin address file to be populated: {e}",
-                        file=sys.stderr,
-                    )
-                    subprocess.run(["docker", "inspect", "envoy"], check=False)
-                    admin_address = None
+                admin_address = Path(admin_address_file.name).read_text()
                 if admin_address:
+                    print(f"Got admin address: {admin_address}")  # noqa: T201
                     response = httpx.get(
                         f"http://{admin_address}/listeners?format=json"
                     )
