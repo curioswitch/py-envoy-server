@@ -53,7 +53,7 @@ runs:
     - name: allow docker access from Windows
       shell: pwsh
       run: |
-        echo "DOCKER_HOST=tcp://$(wsl hostname -I | awk '{print $1}'):2375" >> $env:GITHUB_ENV
+        echo "DOCKER_HOST=tcp://127.0.0.1:2375" >> $env:GITHUB_ENV
 
     - name: Verify Docker Bridge from Windows
       shell: pwsh
