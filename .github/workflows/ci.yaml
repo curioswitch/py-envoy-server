@@ -45,7 +45,9 @@ jobs:
         continue-on-error: true
 
       - if: startsWith(matrix.os, 'windows-')
-        run: wsl ls -al /mnt/c/Users/runneradmin/AppData/Local/Temp
+        run: |
+          docker ps
+          wsl ls -al /mnt/c/Users/runneradmin/AppData/Local/Temp
 
       - run: uv run poe wheels
         if: startsWith(matrix.os, 'ubuntu-')
