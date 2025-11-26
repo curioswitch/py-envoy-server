@@ -44,9 +44,6 @@ runs:
         # 3. Reload and Restart
         sudo systemctl daemon-reload
         sudo systemctl restart docker.service
-        ps -ef | grep docker
-
-        sudo ip addr
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
         docker context ls
@@ -71,17 +68,5 @@ runs:
     - name: Verify Docker Bridge from Windows
       shell: pwsh
       run: |
-        # Keep wsl alive for the step
-        Start-Job -ScriptBlock { wsl sleep infinity } | Out-Null
-        wsl --list --verbose
-        wsl docker version
-        wsl --exec ss -tulpn
-        wsl --exec cat /etc/wsl.conf
-        wsl --exec ps -ef | grep docker
-        Get-NetFirewallRule -DisplayName "Allow WSL Docker"
-
         docker context ls
         docker version
-        docker pull envoyproxy/envoy:linux-amd64
-        wsl --list --verbose
-        docker inspect envoyproxy/envoy:linux-amd64 | Select-String "Architecture"
