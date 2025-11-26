@@ -42,12 +42,6 @@ jobs:
       - run: uv sync
 
       - run: uv run poe check
-        continue-on-error: true
-
-      - if: startsWith(matrix.os, 'windows-')
-        run: |
-          docker ps
-          wsl ls -al /mnt/c/Users/runneradmin/AppData/Local/Temp
 
       - run: uv run poe wheels
         if: startsWith(matrix.os, 'ubuntu-')
