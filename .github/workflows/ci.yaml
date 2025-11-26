@@ -24,8 +24,7 @@ jobs:
         os:
           - macos-15
           - ubuntu-24.04
-          # TODO: Figure out how to get docker + WSL to work on GitHub
-          # - windows-2025
+          - windows-2025
     runs-on: ${{ matrix.os }}
     environment: ${{ github.event_name != 'pull_request' && 'dev' || null }}
     steps:
@@ -42,7 +41,12 @@ jobs:
 
       - run: uv sync
 
-      - run: uv run poe check
+      - name: run lints
+        if: startsWith(matrix.os, 'ubuntu-')
+        run: uv run poe lint
+
+      - name: run tests
+        run: uv run poe test
 
       - run: uv run poe wheels
         if: startsWith(matrix.os, 'ubuntu-')
