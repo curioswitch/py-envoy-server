@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import contextlib
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -48,10 +48,14 @@ def test_runs():
                 time.sleep(0.1)
                 continue
             assert process.returncode is None, "Envoy process exited prematurely"
-            with contextlib.suppress(Exception):
+            try:
                 admin_address = Path(admin_address_file.name).read_text()
+            except Exception as e:
+                print(f"Error reading admin address file: {e}", file=sys.stderr)  # noqa: T201
+                admin_address = None
+            try:
                 if admin_address:
-                    print(f"Got admin address: {admin_address}")  # noqa: T201
+                    print(f"Got admin address: {admin_address}", file=sys.stderr)  # noqa: T201
                     response = httpx.get(
                         f"http://{admin_address}/listeners?format=json"
                     )
@@ -62,6 +66,8 @@ def test_runs():
                     ]["socket_address"]
                     port = socket_address["port_value"]
                     break
+            except Exception as e:
+                print(f"Error querying admin address: {e}", file=sys.stderr)  # noqa: T201
             time.sleep(0.1)
         assert port is not None, "Failed to get admin port from Envoy"
 
