@@ -9,11 +9,11 @@ runs:
         distribution: Ubuntu-24.04
         use-cache: true
         set-as-default: true
-        wsl-conf: |
-          [boot]
-          systemd=true
-          [automount]
-          options = "uid=1000,gid=1000,umask=22,fmask=11,metadata"
+        #wsl-conf: |
+        #  [boot]
+        #  systemd=true
+        #  [automount]
+        #  options = "uid=1000,gid=1000,umask=22,fmask=11,metadata"
 
     - name: Configure Windows Firewall
       shell: pwsh
