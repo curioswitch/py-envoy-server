@@ -10,11 +10,6 @@ runs:
         use-cache: true
         set-as-default: true
 
-    - name: Configure Windows Firewall
-      shell: pwsh
-      run: |
-        New-NetFirewallRule -DisplayName "Allow WSL Docker" -Direction Inbound -LocalPort 2375 -Protocol TCP -Action Allow
-
     - name: setup docker CE
       shell: wsl-bash {0}
       run: |
