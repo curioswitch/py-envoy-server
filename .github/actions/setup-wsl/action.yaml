@@ -32,22 +32,12 @@ runs:
         sudo apt-get update
         sudo apt-get install -y docker-ce docker-ce-cli
 
-        # 1. Configure daemon.json for nftables backend and IP forwarding
-        # Note: nftables backend does not enable ip-forward by default, so we force it.
-        echo '{ "firewall-backend": "nftables", "ip-forward": true }' | sudo tee /etc/docker/daemon.json
-
-        # 2. Modify Systemd Service to listen on TCP 2375
-        # This exposes the daemon so Windows can talk to it.
         sudo sed -i 's|-H fd://|-H fd:// -H tcp://0.0.0.0:2375|' /lib/systemd/system/docker.service
-        cat /lib/systemd/system/docker.service
 
-        # 3. Reload and Restart
         sudo systemctl daemon-reload
         sudo systemctl restart docker.service
 
         export DOCKER_HOST=tcp://127.0.0.1:2375
-        docker context ls
-        # 4. Health Check Loop
         echo "Waiting for Docker Daemon..."
         for i in {1..30}; do
           if sudo docker info > /dev/null 2>&1; then
