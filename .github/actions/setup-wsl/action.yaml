@@ -4,23 +4,16 @@ description: Setup WSL2 environment with Docker support
 runs:
   using: composite
   steps:
-    - name: configure WSL
-      shell: pwsh
-      run: |
-        $config = @"
-        [wsl2]
-        memory=4GB
-        swap=0
-        firewall=false
-        "@
-        $config | Out-File -Append -FilePath "$env:USERPROFILE\.wslconfig" -Encoding ASCII
-        cat "$env:USERPROFILE\.wslconfig"
-
     - uses: vampire/setup-wsl@6a8db447be7ed35f2f499c02c6e60ff77ef11278 # v6.0.0
       with:
         distribution: Ubuntu-24.04
         use-cache: true
         set-as-default: true
+
+    - name: Configure Windows Firewall
+      shell: pwsh
+      run: |
+        New-NetFirewallRule -DisplayName "Allow WSL Docker" -Direction Inbound -InterfaceAlias "vEthernet (WSL)" -LocalPort 2375 -Protocol TCP -Action Allow
 
     - name: setup docker CE
       shell: wsl-bash {0}
@@ -37,7 +30,7 @@ runs:
           sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo apt-get install -y docker-ce docker-ce-cli
 
         # 1. Configure daemon.json for nftables backend and IP forwarding
         # Note: nftables backend does not enable ip-forward by default, so we force it.
