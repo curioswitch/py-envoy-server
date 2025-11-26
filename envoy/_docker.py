@@ -59,6 +59,8 @@ def run_with_docker() -> None:
     docker_cmd = [
         "docker",
         "run",
+        "--name",
+        "envoy",
         "--rm",
         "--network",
         "host",

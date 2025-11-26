@@ -52,12 +52,12 @@ def test_runs():
             with contextlib.suppress(Exception):
                 try:
                     admin_address = Path(admin_address_file.name).read_text()
-                except Exception:
+                except Exception as e:
                     print(  # noqa: T201
-                        "Waiting for admin address file to be populated",
+                        f"Waiting for admin address file to be populated: {e}",
                         file=sys.stderr,
                     )
-                    subprocess.run(["docker", "ps"], check=False)
+                    subprocess.run(["docker", "inspect", "envoy"], check=False)
                     admin_address = None
                 if admin_address:
                     response = httpx.get(
