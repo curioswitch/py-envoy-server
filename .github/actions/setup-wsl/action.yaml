@@ -76,6 +76,7 @@ runs:
         wsl docker version
         wsl --exec ss -tulpn
         wsl --exec cat /etc/wsl.conf
+        wsl --exec ps -ef | grep docker
         Get-NetFirewallRule -DisplayName "Allow WSL Docker"
 
         docker context ls
