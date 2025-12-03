@@ -9,6 +9,9 @@ to run. The Docker fallback is primarily meant for non-production usage, for exa
 project runs Envoy on Linux in production but should still be runnable on a Windows developer
 machine.
 
+Note, this package is for Python users. If you're not already using Python, you may want to try
+[func-e](https://github.com/tetratelabs/func-e/) instead.
+
 ## Usage
 
 ```bash
@@ -22,7 +25,16 @@ then be run as you need.
 uv run envoy --version # or just envoy if in the system Python or an activated virtualenv
 ```
 
-The path to the actual binary can be found with `get_envoy_path` for use with e.g., `subprocess` in Python code.
+If you just want to run Envoy on a machine with `uv` (or `pipx`, etc) available without a project to
+add to, you can.
+
+```bash
+uvx --from envoy-server envoy --version
+```
+
+The path to the actual Envoy binary can be found with `get_envoy_path`. Note, this will not be available
+on Windows or other unsupported Envoy platforms and looking up `envoy` on `PATH` is recommended when
+supporting such platforms.
 
 ```python
 import subprocess
