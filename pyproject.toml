@@ -13,6 +13,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -36,6 +37,13 @@ dev = [
     "toml",
     "wheel",
 ]
+
+[project.urls]
+Homepage = "https://github.com/curioswitch/py-envoy-server"
+Repository = "https://github.com/curioswitch/py-envoy-server.git"
+Issues = "https://github.com/curioswitch/py-envoy-server/issues"
+Changelog = "https://github.com/curioswitch/py-envoy-server/releases"
+
 
 [project.scripts]
 envoy = "envoy._main:main"
