@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: ${{ github.event_name != 'pull_request' && 'dev' || null }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       # By default, docker would try to use Windows containers but we want to use
       # Linux, which will match any conceivable setup for developers using docker
