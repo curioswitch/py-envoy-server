@@ -35,6 +35,8 @@ jobs:
         run: |
           New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
+          Set-Content -Path "undef_getmessage.h" -Value "#pragma once`n#if defined(_WIN32)`n#define WIN32_LEAN_AND_MEAN`n#include <windows.h>`n#undef GetMessage`n#endif"
+
           # Run the build
           bazel build -c opt `
             --config=clang-cl `
@@ -43,7 +45,8 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
-            --cxxopt=-UGetMessage `
+            --cxxopt=/I. `
+            --per_file_cxxopt=external/com_google_cel_cpp/.*@/FIundef_getmessage.h `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
