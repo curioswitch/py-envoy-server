@@ -41,7 +41,7 @@ jobs:
             --cxxopt=/FIstring `
             --noincompatible_repo_env_ignores_action_env `
             --action_env=BAZEL_LINKOPTS="-fuse-ld=lld" `
-            --repo_env=PATH" `
+            --repo_env=PATH `
             --verbose_failures `
             --curses=no `
             envoy
