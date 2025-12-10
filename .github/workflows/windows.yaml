@@ -33,7 +33,7 @@ jobs:
         working-directory: out/envoy-build
         shell: pwsh
         run: |
-          New-Item -Path C:\Program Files\LLVM\bin\link.exe -ItemType SymbolicLink -Value C:\Program Files\LLVM\bin\lld-link.exe
+          New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
           # Run the build
           bazel build -c opt `
