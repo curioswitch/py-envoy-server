@@ -24,12 +24,12 @@
    }
    RELEASE_ASSERT(thread_handle_ != 0, "");
  }
-@@ -43,7 +43,7 @@
+@@ -42,7 +42,7 @@
+   return std::make_unique<ThreadImplWin32>(thread_routine, options);
  }
  
- ThreadId
--ThreadFactoryImplWin32::currentThreadId() {
-+ThreadFactoryImplWin32::currentThreadId() const {
+-ThreadId ThreadFactoryImplWin32::currentThreadId() {
++ThreadId ThreadFactoryImplWin32::currentThreadId() const {
    // TODO(mhoran): test this in windows please.
    return ThreadId(static_cast<int64_t>(::GetCurrentThreadId()));
  }
