@@ -45,7 +45,7 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
-            --cxxopt=/I. `
+            --cxxopt=/imsvc. `
             --per_file_copt=external/com_google_cel_cpp/.*@/FIundef_getmessage.h `
             --repo_env=PATH `
             --verbose_failures `
