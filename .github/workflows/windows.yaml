@@ -32,12 +32,12 @@ jobs:
       - name: build envoy
         working-directory: out/envoy-build
         run: |
-          bazel build -c opt \
-            --config=clang-cl \
-            --cxxopt=/std:c++20 \
-            --host_cxxopt=/std:c++20 \
-            --copt=-Wno-error=implicit-function-declaration \
-            --copt=-Wno-error=unknown-argument \
-            --verbose_failures \
-            --curses=no \
+          bazel build -c opt `
+            --config=clang-cl `
+            --cxxopt=/std:c++20 `
+            --host_cxxopt=/std:c++20 `
+            --copt=-Wno-error=implicit-function-declaration `
+            --copt=-Wno-error=unknown-argument `
+            --verbose_failures `
+            --curses=no `
             envoy
