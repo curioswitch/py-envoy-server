@@ -31,7 +31,18 @@ jobs:
 
       - name: build envoy
         working-directory: out/envoy-build
+        shell: pwsh
         run: |
+          # Find the latest Visual Studio installation with C++ tools
+          $vsPath = (vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1)
+
+          # Construct the path to the DevShell module and import it
+          Import-Module (Join-Path $vsPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
+
+          # Enter the VS Developer Shell environment
+          Enter-VsDevShell -VsInstallPath $vsPath -SkipAutomaticLocation -DevCmdArguments "-arch=amd64"
+
+          # Run the build
           bazel build -c opt `
             --config=clang-cl `
             --cxxopt=/std:c++20 `
