@@ -32,4 +32,4 @@ jobs:
       - name: build envoy
         working-directory: out/envoy-build
         run: |
-          bazel build -c opt envoy
+          bazel build -c opt --config=msvc-cl --verbose_failures envoy
