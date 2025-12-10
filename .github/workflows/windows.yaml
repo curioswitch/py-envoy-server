@@ -43,4 +43,5 @@ jobs:
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
+            --noincompatible_strict_action_env `
             envoy
