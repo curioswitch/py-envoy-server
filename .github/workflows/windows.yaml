@@ -29,6 +29,13 @@ jobs:
           ref: v1.36.3
           path: out/envoy-build
 
+      - name: Apply patches
+        shell: bash
+        run: |
+          cp envoy_windows_fixes.patch out/envoy-build/
+          cd out/envoy-build
+          git apply envoy_windows_fixes.patch
+
       - name: build envoy
         working-directory: out/envoy-build
         shell: pwsh
@@ -42,6 +49,7 @@ jobs:
             --host_cxxopt=/std:c++20 `
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
+            --copt=-Wno-nullability-completeness `
             --cxxopt=/FIstring `
             --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN,/DNOUSER,/DNOGDI `
             --repo_env=PATH `

@@ -1,0 +1,35 @@
+--- source/common/common/win32/thread_impl.h
++++ source/common/common/win32/thread_impl.h
+@@ -39,7 +39,7 @@
+ public:
+   // Thread::ThreadFactory
+   ThreadPtr createThread(std::function<void()> thread_routine, OptionsOptConstRef options) override;
+-  ThreadId currentThreadId() override;
++  ThreadId currentThreadId() const override;
+ };
+ 
+ } // namespace Thread
+--- source/common/common/win32/thread_impl.cc
++++ source/common/common/win32/thread_impl.cc
+@@ -22,9 +22,9 @@
+         return 0;
+       },
+       this, 0, nullptr));
+-  if (options && options.thread_priority_ &&
+-      !SetThreadPriority(thread_handle_, *options.thread_priority_)) {
+-    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options.thread_priority_);
++  if (options && options->thread_priority_ &&
++      !SetThreadPriority(thread_handle_, *options->thread_priority_)) {
++    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options->thread_priority_);
+   }
+   RELEASE_ASSERT(thread_handle_ != 0, "");
+ }
+@@ -43,7 +43,7 @@
+ }
+ 
+ ThreadId
+-ThreadFactoryImplWin32::currentThreadId() {
++ThreadFactoryImplWin32::currentThreadId() const {
+   // TODO(mhoran): test this in windows please.
+   return ThreadId(static_cast<int64_t>(::GetCurrentThreadId()));
+ }
