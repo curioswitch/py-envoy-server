@@ -39,7 +39,6 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
-            --action_env=BAZEL_LINKOPTS="-fuse-ld=lld" `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
