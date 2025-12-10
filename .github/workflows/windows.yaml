@@ -46,7 +46,7 @@ jobs:
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
             --cxxopt=/I. `
-            --per_file_cxxopt=external/com_google_cel_cpp/.*@/FIundef_getmessage.h `
+            --per_file_copt=external/com_google_cel_cpp/.*@/FIundef_getmessage.h `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
