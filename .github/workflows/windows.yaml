@@ -43,7 +43,7 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
-            --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
+            --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN,/DNOUSER,/DNOGDI `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
