@@ -39,6 +39,7 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
+            --noincompatible_repo_env_ignores_action_env `
             --action_env=BAZEL_LINKOPTS="-fuse-ld=lld" `
             --repo_env=BAZEL_LINKOPTS="-fuse-ld=lld" `
             --verbose_failures `
