@@ -38,7 +38,7 @@ jobs:
             --host_cxxopt=/std:c++20 `
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
-            --copt=/FIstring `
+            --cxxopt=/FIstring `
             --action_env=BAZEL_LINKOPTS="-fuse-ld=lld" `
             --verbose_failures `
             --curses=no `
