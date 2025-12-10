@@ -35,7 +35,7 @@
  }
 --- envoy/api/os_sys_calls.h
 +++ envoy/api/os_sys_calls.h
-@@ -1,17 +1,26 @@
+@@ -1,17 +1,27 @@
  #pragma once
  
 +#ifndef WIN32
