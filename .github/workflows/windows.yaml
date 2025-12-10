@@ -34,7 +34,7 @@ jobs:
         run: |
           cp envoy_windows_fixes.patch out/envoy-build/
           cd out/envoy-build
-          git apply envoy_windows_fixes.patch
+          git apply -p0 envoy_windows_fixes.patch
 
       - name: build envoy
         working-directory: out/envoy-build
