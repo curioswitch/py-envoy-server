@@ -43,6 +43,7 @@ jobs:
             --copt=-Wno-error=implicit-function-declaration `
             --copt=-Wno-error=unknown-argument `
             --cxxopt=/FIstring `
+            --cxxopt=-UGetMessage `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
