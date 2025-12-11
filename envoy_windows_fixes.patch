@@ -126,6 +126,22 @@ index 87be085291..d40a6b0c6b 100644
  };
  
  } // namespace Thread
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
+index 7d0f78a501..c934a2b793 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
+@@ -1,7 +1,11 @@
+ #pragma once
+ 
++#ifndef WIN32
+ #include <netinet/in.h>
+ #include <sys/socket.h>
++#else
++#include <winsock2.h>
++#endif // WIN32
+ 
+ #include <functional>
+ 
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
 index 30efe81fc3..f71a587f67 100644
 --- a/source/extensions/common/aws/BUILD
@@ -155,7 +171,7 @@ index dc0b799a35..046015b651 100644
  
  envoy_cc_library(
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..a28aec0a66 100644
+index f07d6a23b1..cb1f94878f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -1,6 +1,16 @@
@@ -169,9 +185,9 @@ index f07d6a23b1..a28aec0a66 100644
 +#ifndef RTLD_NODELETE
 +#define RTLD_NODELETE 0
 +#endif
-+#else
++#else // WIN32
  #include <dlfcn.h>
-+#endif
++#endif // WIN32
  
  #include <string>
  
