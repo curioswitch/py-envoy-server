@@ -75,7 +75,7 @@
          "//source/common/common:thread_lib",
 --- WORKSPACE
 +++ WORKSPACE
-@@ -1,3 +1,17 @@
+@@ -1,3 +1,21 @@
 +load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 +
 +http_archive(
@@ -99,7 +99,7 @@
  load("//bazel:api_binding.bzl",
 --- source/extensions/dynamic_modules/BUILD
 +++ source/extensions/dynamic_modules/BUILD
-@@ -16,6 +16,9 @@
+@@ -16,5 +16,8 @@
      deps = [
          ":abi_version_lib",
          "//envoy/common:exception_lib",
@@ -110,7 +110,7 @@
  )
 --- source/extensions/dynamic_modules/dynamic_modules.cc
 +++ source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -1,6 +1,13 @@
+@@ -1,5 +1,15 @@
  #include "source/extensions/dynamic_modules/dynamic_modules.h"
  
 +#ifdef WIN32
@@ -126,7 +126,7 @@
 +#endif
  
  #include <string>
-@@ -113,7 +120,11 @@
+@@ -113,6 +123,10 @@
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
