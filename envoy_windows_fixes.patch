@@ -54,6 +54,26 @@ index 08f2227c4f..bf804eef12 100644
  namespace Envoy {
  namespace Api {
  
+diff --git a/envoy/common/platform.h b/envoy/common/platform.h
+index 42075f881f..e60f2e02c8 100644
+--- a/envoy/common/platform.h
++++ b/envoy/common/platform.h
+@@ -69,11 +69,15 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
+ 
+ typedef unsigned int sa_family_t;
+ 
++
++#ifndef _STRUCT_IOVEC
+ // Posix structure for scatter/gather I/O, not present on Windows.
+ struct iovec {
+   void* iov_base;
+   size_t iov_len;
+ };
++#define _STRUCT_IOVEC
++#endif  // _STRUCT_IOVEC
+ 
+ // Posix structure for describing messages sent by 'sendmsg` and received by
+ // 'recvmsg'
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
 index c1beac6a52..21803b910e 100644
 --- a/source/common/common/win32/thread_impl.cc
