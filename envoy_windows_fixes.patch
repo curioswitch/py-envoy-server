@@ -63,3 +63,13 @@
 +
  namespace Envoy {
  namespace Api {
+--- source/extensions/common/aws/BUILD
++++ source/extensions/common/aws/BUILD
+@@ -75,6 +75,7 @@
+     ],
+     deps = [
+         "//envoy/common:pure_lib",
++        "//envoy/common:time_interface",
+         "//source/common/common:cleanup_lib",
+         "//source/common/common:lock_guard_lib",
+         "//source/common/common:thread_lib",
