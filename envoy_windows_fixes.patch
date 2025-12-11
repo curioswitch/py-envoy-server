@@ -1,83 +1,10 @@
---- source/common/common/win32/thread_impl.h
-+++ source/common/common/win32/thread_impl.h
-@@ -39,7 +39,7 @@
- public:
-   // Thread::ThreadFactory
-   ThreadPtr createThread(std::function<void()> thread_routine, OptionsOptConstRef options) override;
--  ThreadId currentThreadId() override;
-+  ThreadId currentThreadId() const override;
- };
- 
- } // namespace Thread
---- source/common/common/win32/thread_impl.cc
-+++ source/common/common/win32/thread_impl.cc
-@@ -22,9 +22,9 @@
-         return 0;
-       },
-       this, 0, nullptr));
--  if (options && options.thread_priority_ &&
--      !SetThreadPriority(thread_handle_, *options.thread_priority_)) {
--    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options.thread_priority_);
-+  if (options && options->priority_ &&
-+      !SetThreadPriority(thread_handle_, *options->priority_)) {
-+    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options->priority_);
-   }
-   RELEASE_ASSERT(thread_handle_ != 0, "");
- }
-@@ -42,7 +42,7 @@
-   return std::make_unique<ThreadImplWin32>(thread_routine, options);
- }
- 
--ThreadId ThreadFactoryImplWin32::currentThreadId() {
-+ThreadId ThreadFactoryImplWin32::currentThreadId() const {
-   // TODO(mhoran): test this in windows please.
-   return ThreadId(static_cast<int64_t>(::GetCurrentThreadId()));
- }
---- envoy/api/os_sys_calls.h
-+++ envoy/api/os_sys_calls.h
-@@ -1,17 +1,27 @@
- #pragma once
- 
-+#ifndef WIN32
- #include <sys/resource.h>
-+#endif
- #include <sys/stat.h>
- 
- #include <chrono>
- #include <memory>
- #include <string>
- #include <vector>
- 
- #include "envoy/api/os_sys_calls_common.h"
- #include "envoy/common/platform.h"
- #include "envoy/common/pure.h"
- #include "envoy/network/address.h"
- 
-+#ifdef WIN32
-+struct rlimit {
-+  int rlim_cur;
-+  int rlim_max;
-+};
-+#define RLIMIT_NOFILE 7
-+#endif
-+
- namespace Envoy {
- namespace Api {
---- source/extensions/common/aws/BUILD
-+++ source/extensions/common/aws/BUILD
-@@ -75,6 +75,7 @@
-     ],
-     deps = [
-         "//envoy/common:pure_lib",
-+        "//envoy/common:time_interface",
-         "//source/common/common:cleanup_lib",
-         "//source/common/common:lock_guard_lib",
-         "//source/common/common:thread_lib",
---- WORKSPACE
-+++ WORKSPACE
+diff --git a/WORKSPACE b/WORKSPACE
+index e4460bfc54..4f2feff1d1 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
 @@ -1,5 +1,23 @@
  workspace(name = "envoy")
-
+ 
 +load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 +
 +http_archive(
@@ -97,10 +24,91 @@
 +)
 +
  load("//bazel:api_binding.bzl", "envoy_api_binding")
-
+ 
  envoy_api_binding()
---- source/extensions/dynamic_modules/BUILD
-+++ source/extensions/dynamic_modules/BUILD
+diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
+index 08f2227c4f..bf804eef12 100644
+--- a/envoy/api/os_sys_calls.h
++++ b/envoy/api/os_sys_calls.h
+@@ -1,6 +1,8 @@
+ #pragma once
+ 
++#ifndef WIN32
+ #include <sys/resource.h>
++#endif
+ #include <sys/stat.h>
+ 
+ #include <chrono>
+@@ -13,6 +15,14 @@
+ #include "envoy/common/pure.h"
+ #include "envoy/network/address.h"
+ 
++#ifdef WIN32
++struct rlimit {
++  int rlim_cur;
++  int rlim_max;
++};
++#define RLIMIT_NOFILE 7
++#endif
++
+ namespace Envoy {
+ namespace Api {
+ 
+diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
+index c1beac6a52..21803b910e 100644
+--- a/source/common/common/win32/thread_impl.cc
++++ b/source/common/common/win32/thread_impl.cc
+@@ -22,9 +22,9 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
+         return 0;
+       },
+       this, 0, nullptr));
+-  if (options && options.thread_priority_ &&
+-      !SetThreadPriority(thread_handle_, *options.thread_priority_)) {
+-    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options.thread_priority_);
++  if (options && options->priority_ &&
++      !SetThreadPriority(thread_handle_, *options->priority_)) {
++    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options->priority_);
+   }
+   RELEASE_ASSERT(thread_handle_ != 0, "");
+ }
+@@ -41,7 +41,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
+   return std::make_unique<ThreadImplWin32>(thread_routine, options);
+ }
+ 
+-ThreadId ThreadFactoryImplWin32::currentThreadId() {
++ThreadId ThreadFactoryImplWin32::currentThreadId() const {
+   // TODO(mhoran): test this in windows please.
+   return ThreadId(static_cast<int64_t>(::GetCurrentThreadId()));
+ }
+diff --git a/source/common/common/win32/thread_impl.h b/source/common/common/win32/thread_impl.h
+index 87be085291..d40a6b0c6b 100644
+--- a/source/common/common/win32/thread_impl.h
++++ b/source/common/common/win32/thread_impl.h
+@@ -37,7 +37,7 @@ class ThreadFactoryImplWin32 : public ThreadFactory {
+ public:
+   // Thread::ThreadFactory
+   ThreadPtr createThread(std::function<void()> thread_routine, OptionsOptConstRef options) override;
+-  ThreadId currentThreadId() override;
++  ThreadId currentThreadId() const override;
+ };
+ 
+ } // namespace Thread
+diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
+index 30efe81fc3..f71a587f67 100644
+--- a/source/extensions/common/aws/BUILD
++++ b/source/extensions/common/aws/BUILD
+@@ -77,6 +77,7 @@ envoy_cc_library(
+     ],
+     deps = [
+         "//envoy/common:pure_lib",
++        "//envoy/common:time_interface",
+         "//source/common/common:cleanup_lib",
+         "//source/common/common:lock_guard_lib",
+         "//source/common/common:thread_lib",
+diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
+index dc0b799a35..046015b651 100644
+--- a/source/extensions/dynamic_modules/BUILD
++++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
      deps = [
          ":abi_version_lib",
@@ -111,13 +119,15 @@
 +        "//conditions:default": [],
 +    }),
  )
-
+ 
  envoy_cc_library(
---- source/extensions/dynamic_modules/dynamic_modules.cc
-+++ source/extensions/dynamic_modules/dynamic_modules.cc
+diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
+index f07d6a23b1..375cb40a09 100644
+--- a/source/extensions/dynamic_modules/dynamic_modules.cc
++++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -1,6 +1,16 @@
  #include "source/extensions/dynamic_modules/dynamic_modules.h"
-
+ 
 +#ifdef WIN32
 +#include "dlfcn.h"
 +#ifndef RTLD_NOLOAD
@@ -129,9 +139,40 @@
 +#else
  #include <dlfcn.h>
 +#endif
-
+ 
  #include <string>
-
+ 
+@@ -25,7 +35,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+   //
+   // So we can use RTLD_NOLOAD to check if the module is already loaded to avoid the duplicate call
+   // to the init function.
+-  void* handle = dlopen(object_file_absolute_path.c_str(), RTLD_NOLOAD | RTLD_LAZY);
++  void* handle = dlopen(object_file_absolute_path.string().c_str(), RTLD_NOLOAD | RTLD_LAZY);
+   if (handle != nullptr) {
+     // This means the module is already loaded, and the return value is the handle of the already
+     // loaded module. We don't need to call the init function again.
+@@ -43,10 +53,10 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+   if (do_not_close) {
+     mode |= RTLD_NODELETE;
+   }
+-  handle = dlopen(object_file_absolute_path.c_str(), mode);
++  handle = dlopen(object_file_absolute_path.string().c_str(), mode);
+   if (handle == nullptr) {
+     return absl::InvalidArgumentError(absl::StrCat(
+-        "Failed to load dynamic module: ", object_file_absolute_path.c_str(), " : ", dlerror()));
++        "Failed to load dynamic module: ", object_file_absolute_path.string(), " : ", dlerror()));
+   }
+ 
+   DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
+@@ -69,7 +79,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+     return absl::InvalidArgumentError(
+         absl::StrCat("ABI version mismatch: got ", abi_version, ", but expected ", kAbiVersion));
+   }
+-  return dynamic_module;
++  return std::move(dynamic_module);
+ }
+ 
+ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
 @@ -82,7 +92,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
                                                     " is not set"));
    }
@@ -143,4 +184,4 @@
 +#endif
    return newDynamicModule(file_path_absolute, do_not_close, load_globally);
  }
-
+ 
