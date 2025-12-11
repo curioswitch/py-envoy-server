@@ -63,4 +63,4 @@ jobs:
             --verbose_failures `
             --curses=no `
             --noincompatible_strict_action_env `
-            //source/extensions/dynamic_modules:dynamic_modules_lib
+            envoy
