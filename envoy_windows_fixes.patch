@@ -26,6 +26,19 @@ index e4460bfc54..4f2feff1d1 100644
  load("//bazel:api_binding.bzl", "envoy_api_binding")
  
  envoy_api_binding()
+diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
+index 465f8f55a0..cd045b0747 100644
+--- a/bazel/repositories.bzl
++++ b/bazel/repositories.bzl
+@@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
+     "envoy.filters.http.sxg",
+     "envoy.tracers.dynamic_ot",
+     "envoy.tracers.datadog",
++    # Only implemented for Linux.
++    "envoy.resource_monitors.cpu_utilization",
+     # Extensions that require CEL.
+     "envoy.access_loggers.extension_filters.cel",
+     "envoy.rate_limit_descriptors.expr",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 08f2227c4f..bf804eef12 100644
 --- a/envoy/api/os_sys_calls.h
