@@ -126,6 +126,23 @@ index 87be085291..d40a6b0c6b 100644
  };
  
  } // namespace Thread
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
+index dcf868020f..0383cb470d 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
+@@ -1,8 +1,12 @@
+ #include "source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h"
+ 
++#ifndef WIN32
+ #include <arpa/inet.h>
+ #include <netinet/in.h>
+ #include <sys/socket.h>
++#else
++#include <winsock2.h>
++#endif // WIN32
+ 
+ #include <cstring>
+ #include <functional>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 index 7d0f78a501..c934a2b793 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
