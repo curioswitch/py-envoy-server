@@ -184,3 +184,6 @@ typing-extensions = false
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
 split-on-trailing-comma = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
