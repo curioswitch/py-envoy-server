@@ -384,7 +384,7 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..e3c9332f52 100644
+index dc0b799a35..5bc76b5728 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -4,7 +4,7 @@ load(
@@ -392,7 +392,7 @@ index dc0b799a35..e3c9332f52 100644
  )
  
 -licenses(["notice"])  # Apache 2
-+licenses(["notice"])  # Apache 2 CACHE4
++licenses(["notice"])  # Apache 2 CACHE5
  
  envoy_extension_package()
  

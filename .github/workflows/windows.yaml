@@ -59,6 +59,7 @@ jobs:
             --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
             --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
             --per_file_copt=source/extensions/filters/http/ext_proc/.*@-Wno-nontrivial-memcall `
+            --per_file_copt=source/extensions/tracers/opentelemetry/samplers/cel/.*@-Wno-nontrivial-memcall `
             --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN `
             --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
             --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
