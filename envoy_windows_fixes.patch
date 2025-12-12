@@ -75,7 +75,7 @@ index dc07b536d3..ddf1f24123 100644
          "-G",
          "Ninja",
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 465f8f55a0..cd045b0747 100644
+index 465f8f55a0..4b50850526 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -87,6 +87,19 @@ index 465f8f55a0..cd045b0747 100644
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
+@@ -920,7 +922,11 @@ def _com_github_luajit_luajit():
+         build_file_content = BUILD_ALL_CONTENT,
+         patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
+         patch_args = ["-p1"],
+-        patch_cmds = ["chmod u+x build.py"],
++        patch_cmds = [
++            "chmod u+x build.py",
++            "sed -i 's|/Zi|/Z7|g' src/msvcbuild.bat",
++            "sed -i 's|/MD|/MT|g' src/msvcbuild.bat",
++        ],
+     )
+ 
+ def _com_github_google_tcmalloc():
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 08f2227c4f..bf804eef12 100644
 --- a/envoy/api/os_sys_calls.h
