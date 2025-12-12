@@ -87,6 +87,18 @@ index 42075f881f..e60f2e02c8 100644
  
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
+diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
+index 7fda90aa08..5843204e4e 100644
+--- a/source/common/api/win32/os_sys_calls_impl.cc
++++ b/source/common/api/win32/os_sys_calls_impl.cc
+@@ -2,6 +2,7 @@
+ #include <fcntl.h>
+ #include <io.h>
+ #include <sys/stat.h>
++#include <winsock2.h>
+ 
+ #include <cstdint>
+ #include <string>
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
 index c1beac6a52..21803b910e 100644
 --- a/source/common/common/win32/thread_impl.cc
