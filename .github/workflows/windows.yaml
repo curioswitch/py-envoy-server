@@ -59,6 +59,7 @@ jobs:
             --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN `
             --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
             --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
+            --per_file_copt=external/com_google_cel_cpp/.*@-Wno-nontrivial-memcall `
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
