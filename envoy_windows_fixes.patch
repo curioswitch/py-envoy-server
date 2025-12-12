@@ -111,7 +111,7 @@ index 7fda90aa08..5011ce3d81 100644
                                              const void* optval, socklen_t optlen) {
    if (optname == IP_RECVTOS || optname == IPV6_RECVTCLASS) {
 -    const int rc = ::WSASetRecvIPEcn(sockfd, *(int*)optval == 1);
-+    DWORD enabled = (*(int*)optval == 1) ? TRUE : FALSE;
++    DWORD enabled = (*(int*)optval == 1) ? 1 : 0;
 +    DWORD bytes_returned;
 +    const int rc = ::WSAIoctl(sockfd, SIO_SET_RECV_IP_ECN, &enabled, sizeof(enabled), nullptr, 0,
 +                              &bytes_returned, nullptr, nullptr);
