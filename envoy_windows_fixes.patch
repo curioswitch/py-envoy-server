@@ -194,6 +194,22 @@ index 87be085291..d40a6b0c6b 100644
  };
  
  } // namespace Thread
+diff --git a/source/common/event/win32/signal_impl.cc b/source/common/event/win32/signal_impl.cc
+index 0466ee6b73..8cdc1b2510 100644
+--- a/source/common/event/win32/signal_impl.cc
++++ b/source/common/event/win32/signal_impl.cc
+@@ -32,9 +32,10 @@ SignalEventImpl::SignalEventImpl(DispatcherImpl& dispatcher, signal_t signal_num
+ 
+   read_handle_->initializeFileEvent(
+       dispatcher,
+-      [this](uint32_t events) -> void {
++      [this](uint32_t events) -> absl::Status {
+         ASSERT(events == Event::FileReadyType::Read);
+         cb_();
++        return absl::OkStatus();
+       },
+       Event::FileTriggerType::Level, Event::FileReadyType::Read);
+   eventBridgeHandlersSingleton::get()[signal_num] = write_handle;
 diff --git a/source/common/filesystem/win32/watcher_impl.cc b/source/common/filesystem/win32/watcher_impl.cc
 index 58905d996d..833d657ac2 100644
 --- a/source/common/filesystem/win32/watcher_impl.cc
@@ -368,7 +384,7 @@ index dc0b799a35..cc63f724da 100644
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..cb1f94878f 100644
+index f07d6a23b1..5a6f46e183 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -1,6 +1,16 @@
@@ -388,16 +404,28 @@ index f07d6a23b1..cb1f94878f 100644
  
  #include <string>
  
-@@ -25,7 +35,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -23,14 +33,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+   // > This can be used to test if the object is already resident (dlopen() returns NULL if it
+   // > is not, or the object's handle if it is resident).
    //
++  void* handle = nullptr;
++#ifndef _WIN32
    // So we can use RTLD_NOLOAD to check if the module is already loaded to avoid the duplicate call
-   // to the init function.
+-  // to the init function.
 -  void* handle = dlopen(object_file_absolute_path.c_str(), RTLD_NOLOAD | RTLD_LAZY);
-+  void* handle = dlopen(object_file_absolute_path.string().c_str(), RTLD_NOLOAD | RTLD_LAZY);
++  // to the init function. Because Windows doesn't support RTLD_NOLOAD, modules that support it
++  // will need to have idempotent init functions.
++  handle = dlopen(object_file_absolute_path.string().c_str(), RTLD_NOLOAD | RTLD_LAZY);
    if (handle != nullptr) {
      // This means the module is already loaded, and the return value is the handle of the already
      // loaded module. We don't need to call the init function again.
-@@ -43,10 +53,10 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+     return std::make_unique<DynamicModule>(handle);
+   }
++#endif // _WIN32
+   // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
+   // dlopen results in Invalid argument.
+   int mode = RTLD_LAZY;
+@@ -43,10 +57,10 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    if (do_not_close) {
      mode |= RTLD_NODELETE;
    }
@@ -410,7 +438,7 @@ index f07d6a23b1..cb1f94878f 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -62,14 +72,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -62,14 +76,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -427,7 +455,7 @@ index f07d6a23b1..cb1f94878f 100644
  }
  
  absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
-@@ -82,7 +92,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -82,7 +96,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
