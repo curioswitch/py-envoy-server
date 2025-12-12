@@ -88,7 +88,7 @@ index 42075f881f..e60f2e02c8 100644
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
 diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
-index 7fda90aa08..5011ce3d81 100644
+index 7fda90aa08..dc32868f62 100644
 --- a/source/common/api/win32/os_sys_calls_impl.cc
 +++ b/source/common/api/win32/os_sys_calls_impl.cc
 @@ -10,6 +10,14 @@
@@ -168,6 +168,28 @@ index 87be085291..d40a6b0c6b 100644
  };
  
  } // namespace Thread
+diff --git a/source/common/memory/aligned_allocator.h b/source/common/memory/aligned_allocator.h
+index f45e7f74b2..f715987527 100644
+--- a/source/common/memory/aligned_allocator.h
++++ b/source/common/memory/aligned_allocator.h
+@@ -45,6 +45,8 @@ public:
+       return nullptr;
+     }
+     return static_cast<T*>(ptr);
++#elif defined(_WIN32)
++    return static_cast<T*>(_aligned_malloc(bytes, Alignment));
+ #else
+     // Ensure bytes is a multiple of Alignment, which is required by std::aligned_alloc.
+     bytes = round_up_to_alignment(bytes);
+@@ -56,6 +58,8 @@ public:
+     if (p != nullptr) {
+ #ifdef ALIGNED_ALLOCATOR_USE_POSIX_MEMALIGN
+       free(p);
++#elif defined(_WIN32)
++      _aligned_free(p);
+ #else
+       std::free(p);
+ #endif
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index dcf868020f..0383cb470d 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
