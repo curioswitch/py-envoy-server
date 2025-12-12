@@ -26,6 +26,32 @@ index e4460bfc54..4f2feff1d1 100644
  load("//bazel:api_binding.bzl", "envoy_api_binding")
  
  envoy_api_binding()
+diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
+index 866a00f280..8552fbec63 100644
+--- a/bazel/envoy_internal.bzl
++++ b/bazel/envoy_internal.bzl
+@@ -214,7 +214,10 @@ def envoy_exported_symbols_input():
+     return [
+         "@envoy//bazel:exported_symbols.txt",
+         "@envoy//bazel:exported_symbols_apple.txt",
+-    ]
++    ] + select({
++        "@envoy//bazel:windows_x86_64": ["//source/extensions/dynamic_modules:dynamic_modules_exports.def"],
++        "//conditions:default": [],
++    })
+ 
+ # Default symbols to be exported.
+ def _envoy_default_exported_symbols():
+@@ -225,6 +228,9 @@ def _envoy_default_exported_symbols():
+         "@envoy//bazel:apple": [
+             "-Wl,-exported_symbols_list,$(location @envoy//bazel:exported_symbols_apple.txt)",
+         ],
++        "@envoy//bazel:windows_x86_64": [
++            "-DEF:$(location //source/extensions/dynamic_modules:dynamic_modules_exports.def)",
++        ],
+         "//conditions:default": [],
+     })
+ 
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
 index 465f8f55a0..cd045b0747 100644
 --- a/bazel/repositories.bzl
@@ -168,6 +194,31 @@ index 87be085291..d40a6b0c6b 100644
  };
  
  } // namespace Thread
+diff --git a/source/common/filesystem/win32/watcher_impl.cc b/source/common/filesystem/win32/watcher_impl.cc
+index 58905d996d..833d657ac2 100644
+--- a/source/common/filesystem/win32/watcher_impl.cc
++++ b/source/common/filesystem/win32/watcher_impl.cc
+@@ -22,9 +22,10 @@ WatcherImpl::WatcherImpl(Event::Dispatcher& dispatcher, Filesystem::Instance& fi
+ 
+   read_handle_->initializeFileEvent(
+       dispatcher,
+-      [this](uint32_t events) -> void {
++      [this](uint32_t events) -> absl::Status {
+         ASSERT(events == Event::FileReadyType::Read);
+         onDirectoryEvent();
++        return absl::OkStatus();
+       },
+       Event::FileTriggerType::Level, Event::FileReadyType::Read);
+ 
+@@ -203,7 +204,7 @@ void WatcherImpl::directoryChangeCompletion(DWORD err, DWORD num_bytes, LPOVERLA
+       if (watch.file_ == file && (watch.events_ & events)) {
+         ENVOY_LOG(debug, "matched callback: file: {}", watcher->wstring_converter_.to_bytes(file));
+         const auto cb = watch.cb_;
+-        const auto cb_closure = [cb, events]() -> void { cb(events); };
++        const auto cb_closure = [cb, events]() -> void { (void)cb(events); };
+         watcher->active_callbacks_.push(cb_closure);
+         // write a byte to the other end of the socket that libevent is watching
+         // this tells the libevent callback to pull this callback off the active_callbacks_
 diff --git a/source/common/memory/aligned_allocator.h b/source/common/memory/aligned_allocator.h
 index f45e7f74b2..f715987527 100644
 --- a/source/common/memory/aligned_allocator.h
@@ -288,7 +339,7 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..046015b651 100644
+index dc0b799a35..cc63f724da 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
@@ -303,6 +354,19 @@ index dc0b799a35..046015b651 100644
  )
  
  envoy_cc_library(
+@@ -27,3 +30,12 @@ envoy_cc_library(
+         "abi_version.h",
+     ],
+ )
++
++genrule(
++    name = "dynamic_modules_exports",
++    srcs = ["abi.h"],
++    outs = ["dynamic_modules_exports.def"],
++    cmd = "$(location //tools:gen_dynamic_modules_def) $(location abi.h) $@",
++    tools = ["//tools:gen_dynamic_modules_def"],
++    visibility = ["//visibility:public"],
++)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index f07d6a23b1..cb1f94878f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
@@ -375,3 +439,58 @@ index f07d6a23b1..cb1f94878f 100644
    return newDynamicModule(file_path_absolute, do_not_close, load_globally);
  }
  
+diff --git a/tools/BUILD b/tools/BUILD
+index 94892810c9..641883c9f5 100644
+--- a/tools/BUILD
++++ b/tools/BUILD
+@@ -10,6 +10,12 @@ exports_files([
+     "check_repositories.sh",
+ ])
+ 
++py_binary(
++    name = "gen_dynamic_modules_def",
++    srcs = ["gen_dynamic_modules_def.py"],
++    visibility = ["//visibility:public"],
++)
++
+ py_binary(
+     name = "stack_decode",
+     srcs = ["stack_decode.py"],
+diff --git a/tools/gen_dynamic_modules_def.py b/tools/gen_dynamic_modules_def.py
+new file mode 100644
+index 0000000000..a491b8d087
+--- /dev/null
++++ b/tools/gen_dynamic_modules_def.py
+@@ -0,0 +1,32 @@
++import re
++import sys
++
++def main():
++    if len(sys.argv) != 3:
++        print("Usage: gen_dynamic_modules_def.py <input_header> <output_def>")
++        sys.exit(1)
++
++    input_header = sys.argv[1]
++    output_def = sys.argv[2]
++
++    with open(input_header, 'r') as f:
++        content = f.read()
++
++    # Find all function declarations starting with envoy_dynamic_module_callback_
++    # We assume they look like "void envoy_dynamic_module_callback_foo(...);"
++    # The regex captures the function name.
++    # We look for the return type (void or others), whitespace, then the function name.
++    # Based on abi.h, they seem to be mostly void, but let's be generic.
++    # Example: void envoy_dynamic_module_callback_http_get_header(
++    matches = re.findall(r'\b(envoy_dynamic_module_callback_\w+)\(', content)
++
++    # Remove duplicates and sort
++    symbols = sorted(list(set(matches)))
++
++    with open(output_def, 'w') as f:
++        f.write("EXPORTS\n")
++        for symbol in symbols:
++            f.write(f"    {symbol}\n")
++
++if __name__ == "__main__":
++    main()
