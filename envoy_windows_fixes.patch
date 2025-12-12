@@ -1,14 +1,3 @@
-diff --git a/BUILD b/BUILD
-index 6b6d8727f0..1fd7e179ff 100644
---- a/BUILD
-+++ b/BUILD
-@@ -1,5 +1,5 @@
- load("//tools/python:namespace.bzl", "envoy_py_namespace")
--
-+# RAG
- licenses(["notice"])  # Apache 2
- 
- envoy_py_namespace()
 diff --git a/WORKSPACE b/WORKSPACE
 index e4460bfc54..4f2feff1d1 100644
 --- a/WORKSPACE
@@ -258,6 +247,22 @@ index 2f16d81f8c..15ab6d45ce 100644
  #include <atomic>
  #include <cstdint>
  
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
+index 54654c0be0..7cfbcb9489 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
+@@ -210,7 +210,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+     if (fd == itr->get()->ioHandle().fdDoNotUse()) {
+       ENVOY_LOG(debug, "UpstreamSocketManager: marking socket dead. node: {} cluster: {} fd: {}.",
+                 node_id, cluster_id, fd);
++#ifndef _WIN32
+       ::shutdown(fd, SHUT_RDWR);
++#else
++      ::shutdown(fd, SD_BOTH);
++#endif // _WIN32
+       itr = sockets.erase(itr);
+       socket_found = true;
+ 
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 index 05e34f7933..d333caff75 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
@@ -282,22 +287,6 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:cleanup_lib",
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
-diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..046015b651 100644
---- a/source/extensions/dynamic_modules/BUILD
-+++ b/source/extensions/dynamic_modules/BUILD
-@@ -18,7 +18,10 @@ envoy_cc_library(
-     deps = [
-         ":abi_version_lib",
-         "//envoy/common:exception_lib",
--    ],
-+    ] + select({
-+        "//bazel:windows_x86_64": ["@dlfcn-win32//:dlfcn-win32"],
-+        "//conditions:default": [],
-+    }),
- )
- 
- envoy_cc_library(
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index f07d6a23b1..cb1f94878f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
