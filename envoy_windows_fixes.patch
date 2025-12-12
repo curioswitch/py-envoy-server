@@ -223,6 +223,18 @@ index 7d0f78a501..c934a2b793 100644
  
  #include <functional>
  
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
+index 05e34f7933..d333caff75 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
+ #include <list>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
 index 30efe81fc3..f71a587f67 100644
 --- a/source/extensions/common/aws/BUILD
