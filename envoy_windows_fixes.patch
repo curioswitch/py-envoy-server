@@ -342,6 +342,22 @@ index 05e34f7933..d333caff75 100644
  #include <atomic>
  #include <cstdint>
  #include <list>
+diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
+index 3241cab9ad..abee5c8080 100644
+--- a/source/extensions/clusters/reverse_connection/reverse_connection.h
++++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
+@@ -1,7 +1,11 @@
+ #pragma once
+ 
++#ifndef _WIN32
+ #include <netinet/in.h>
+ #include <sys/socket.h>
++#else
++#include <winsock2.h>
++#endif // WIN32
+ 
+ #include <cstdint>
+ #include <cstring>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
 index 30efe81fc3..f71a587f67 100644
 --- a/source/extensions/common/aws/BUILD
@@ -355,7 +371,7 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..19588253d2 100644
+index dc0b799a35..e3c9332f52 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -4,7 +4,7 @@ load(
@@ -363,7 +379,7 @@ index dc0b799a35..19588253d2 100644
  )
  
 -licenses(["notice"])  # Apache 2
-+licenses(["notice"])  # Apache 2 CACHE3
++licenses(["notice"])  # Apache 2 CACHE4
  
  envoy_extension_package()
  
