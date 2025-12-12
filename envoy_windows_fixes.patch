@@ -1,3 +1,14 @@
+diff --git a/BUILD b/BUILD
+index 6b6d8727f0..1fd7e179ff 100644
+--- a/BUILD
++++ b/BUILD
+@@ -1,5 +1,5 @@
+ load("//tools/python:namespace.bzl", "envoy_py_namespace")
+-
++# RAG
+ licenses(["notice"])  # Apache 2
+ 
+ envoy_py_namespace()
 diff --git a/WORKSPACE b/WORKSPACE
 index e4460bfc54..4f2feff1d1 100644
 --- a/WORKSPACE
@@ -222,6 +233,30 @@ index 7d0f78a501..c934a2b793 100644
 +#endif // WIN32
  
  #include <functional>
+ 
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
+index b543752543..fdb98e0624 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
+ 
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
+index 2f16d81f8c..15ab6d45ce 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 index 05e34f7933..d333caff75 100644
