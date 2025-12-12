@@ -287,6 +287,22 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:cleanup_lib",
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
+diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
+index dc0b799a35..046015b651 100644
+--- a/source/extensions/dynamic_modules/BUILD
++++ b/source/extensions/dynamic_modules/BUILD
+@@ -18,7 +18,10 @@ envoy_cc_library(
+     deps = [
+         ":abi_version_lib",
+         "//envoy/common:exception_lib",
+-    ],
++    ] + select({
++        "//bazel:windows_x86_64": ["@dlfcn-win32//:dlfcn-win32"],
++        "//conditions:default": [],
++    }),
+ )
+ 
+ envoy_cc_library(
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index f07d6a23b1..cb1f94878f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
