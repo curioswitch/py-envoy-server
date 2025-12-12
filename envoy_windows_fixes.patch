@@ -88,17 +88,47 @@ index 42075f881f..e60f2e02c8 100644
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
 diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
-index 7fda90aa08..8b2e9d2660 100644
+index 7fda90aa08..5011ce3d81 100644
 --- a/source/common/api/win32/os_sys_calls_impl.cc
 +++ b/source/common/api/win32/os_sys_calls_impl.cc
-@@ -2,6 +2,7 @@
- #include <fcntl.h>
- #include <io.h>
- #include <sys/stat.h>
-+#include <ws2tcpip.h>
+@@ -10,6 +10,14 @@
  
- #include <cstdint>
- #include <string>
+ #define DWORD_MAX UINT32_MAX
+ 
++#ifndef SIO_SET_RECV_IP_ECN
++#define SIO_SET_RECV_IP_ECN _WSAIOW(IOC_VENDOR, 12)
++#endif
++
++#ifndef SIO_GET_RECV_IP_ECN
++#define SIO_GET_RECV_IP_ECN _WSAIOR(IOC_VENDOR, 13)
++#endif
++
+ namespace Envoy {
+ namespace Api {
+ namespace {
+@@ -245,7 +253,10 @@ SysCallIntResult OsSysCallsImpl::fstat(os_fd_t fd, struct stat* buf) {
+ SysCallIntResult OsSysCallsImpl::setsockopt(os_fd_t sockfd, int level, int optname,
+                                             const void* optval, socklen_t optlen) {
+   if (optname == IP_RECVTOS || optname == IPV6_RECVTCLASS) {
+-    const int rc = ::WSASetRecvIPEcn(sockfd, *(int*)optval == 1);
++    DWORD enabled = (*(int*)optval == 1) ? TRUE : FALSE;
++    DWORD bytes_returned;
++    const int rc = ::WSAIoctl(sockfd, SIO_SET_RECV_IP_ECN, &enabled, sizeof(enabled), nullptr, 0,
++                              &bytes_returned, nullptr, nullptr);
+     return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
+   }
+   const int rc = ::setsockopt(sockfd, level, optname, static_cast<const char*>(optval), optlen);
+@@ -255,7 +266,9 @@ SysCallIntResult OsSysCallsImpl::setsockopt(os_fd_t sockfd, int level, int optna
+ SysCallIntResult OsSysCallsImpl::getsockopt(os_fd_t sockfd, int level, int optname, void* optval,
+                                             socklen_t* optlen) {
+   if (optname == IP_RECVTOS || optname == IPV6_RECVTCLASS) {
+-    const int rc = ::WSAGetRecvIPEcn(sockfd, (DWORD*)optval);
++    DWORD bytes_returned;
++    const int rc = ::WSAIoctl(sockfd, SIO_GET_RECV_IP_ECN, nullptr, 0, optval, sizeof(DWORD),
++                              &bytes_returned, nullptr, nullptr);
+     return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
+   }
+   const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
 index c1beac6a52..21803b910e 100644
 --- a/source/common/common/win32/thread_impl.cc
