@@ -68,3 +68,21 @@ jobs:
             --curses=no `
             --noincompatible_strict_action_env `
             envoy
+
+          cp bazel-bin/source/exe/envoy-static.exe ../../envoy/_envoy/_bin/envoy.exe
+
+      - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
+
+      - run: uv lock --check
+
+      - run: uv sync
+
+      - run: uv build --wheel
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: envoy-windows-wheel
+          path: dist/*.whl
+
+      - name: run tests
+        run: uv run poe test
