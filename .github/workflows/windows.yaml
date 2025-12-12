@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
+      - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
+
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           repository: envoyproxy/envoy
@@ -75,8 +77,6 @@ jobs:
           path: out/envoy-build/bazel-bin/source/exe/envoy-static.exe
 
       - run: cp out/envoy-build/bazel-bin/source/exe/envoy-static.exe envoy/_bin/envoy.exe
-
-      - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
 
       - run: uv lock --check
 
