@@ -76,14 +76,9 @@ jobs:
           name: envoy
           path: out/envoy-build/bazel-bin/source/exe/envoy-static.exe
 
+      # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
+      # with this is name the actual executable envoy.dll - Windows will run it fine.
       - run: cp out/envoy-build/bazel-bin/source/exe/envoy-static.exe envoy/_bin/envoy.dll
-
-      - name: Dump exports
-        run: |
-          $installationPath = vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          Import-Module (Join-Path $installationPath "Common7\Tools\Microsoft.VisualStudio.DevShell.dll")
-          Enter-VsDevShell -VsInstallPath $installationPath -SkipAutomaticLocation -DevCmdArguments "-arch=x64"
-          dumpbin /exports envoy/_bin/envoy.dll
 
       - run: uv lock --check
 
