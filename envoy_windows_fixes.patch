@@ -609,7 +609,7 @@ index dc0b799a35..299e4c7679 100644
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..47bb7daf9f 100644
+index f07d6a23b1..b82519267d 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
@@ -651,16 +651,7 @@ index f07d6a23b1..47bb7daf9f 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -56,20 +62,24 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
-           "envoy_dynamic_module_on_program_init");
- 
-   if (!init_function.ok()) {
-+    std::cout << "Didn't get init_function" << std::endl;
-     return init_function.status();
-   }
- 
-+  std::cout << "Got init_function" << std::endl;
-+
+@@ -62,14 +68,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -673,12 +664,11 @@ index f07d6a23b1..47bb7daf9f 100644
          absl::StrCat("ABI version mismatch: got ", abi_version, ", but expected ", kAbiVersion));
    }
 -  return dynamic_module;
-+  std::cout << "Ran init_function" << std::endl;
 +  return std::move(dynamic_module);
  }
  
  absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
-@@ -82,7 +92,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -82,7 +88,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
@@ -883,83 +873,6 @@ index 440914422f..0c7ffe3537 100644
      .expect("Unable to generate bindings");
  
    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-diff --git a/source/extensions/filters/http/dynamic_modules/BUILD b/source/extensions/filters/http/dynamic_modules/BUILD
-index 05cbf4ca4c..b3e1e6f12b 100644
---- a/source/extensions/filters/http/dynamic_modules/BUILD
-+++ b/source/extensions/filters/http/dynamic_modules/BUILD
-@@ -53,6 +53,7 @@ envoy_cc_extension(
- envoy_cc_library(
-     name = "abi_impl",
-     srcs = ["abi_impl.cc"],
-+    hdrs = ["abi_impl.h"],
-     deps = [
-         ":filter_lib",
-         "//source/common/http:utility_lib",
-diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.cc b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
-index 2d2b166c27..7418832c4c 100644
---- a/source/extensions/filters/http/dynamic_modules/abi_impl.cc
-+++ b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
-@@ -5,6 +5,8 @@
- #include "source/extensions/dynamic_modules/abi.h"
- #include "source/extensions/filters/http/dynamic_modules/filter.h"
- 
-+#include "source/extensions/filters/http/dynamic_modules/abi_impl.h"
-+
- namespace Envoy {
- namespace Extensions {
- namespace DynamicModules {
-@@ -1508,7 +1510,11 @@ void envoy_dynamic_module_callback_log(envoy_dynamic_module_type_log_level level
-     break;
-   }
- }
-+
- }
-+
-+void force_link_abi_impl() {}
-+
- } // namespace HttpFilters
- } // namespace DynamicModules
- } // namespace Extensions
-diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.h b/source/extensions/filters/http/dynamic_modules/abi_impl.h
-new file mode 100644
-index 0000000000..e24ba27182
---- /dev/null
-+++ b/source/extensions/filters/http/dynamic_modules/abi_impl.h
-@@ -0,0 +1,14 @@
-+#pragma once
-+
-+namespace Envoy {
-+namespace Extensions {
-+namespace DynamicModules {
-+namespace HttpFilters {
-+
-+// This function is used to force the linker to include the abi_impl library.
-+void force_link_abi_impl();
-+
-+} // namespace HttpFilters
-+} // namespace DynamicModules
-+} // namespace Extensions
-+} // namespace Envoy
-diff --git a/source/extensions/filters/http/dynamic_modules/factory.cc b/source/extensions/filters/http/dynamic_modules/factory.cc
-index 775a255983..616e89dba0 100644
---- a/source/extensions/filters/http/dynamic_modules/factory.cc
-+++ b/source/extensions/filters/http/dynamic_modules/factory.cc
-@@ -1,5 +1,6 @@
- #include "source/extensions/filters/http/dynamic_modules/factory.h"
- 
-+#include "source/extensions/filters/http/dynamic_modules/abi_impl.h"
- #include "source/extensions/filters/http/dynamic_modules/filter.h"
- #include "source/extensions/filters/http/dynamic_modules/filter_config.h"
- 
-@@ -11,6 +12,8 @@ absl::StatusOr<Http::FilterFactoryCb> DynamicModuleConfigFactory::createFilterFa
-     const FilterConfig& proto_config, const std::string&, DualInfo dual_info,
-     Server::Configuration::ServerFactoryContext& context) {
- 
-+  Extensions::DynamicModules::HttpFilters::force_link_abi_impl();
-+
-   const auto& module_config = proto_config.dynamic_module_config();
-   auto dynamic_module = Extensions::DynamicModules::newDynamicModuleByName(
-       module_config.name(), module_config.do_not_close(), module_config.load_globally());
 diff --git a/tools/BUILD b/tools/BUILD
 index 94892810c9..641883c9f5 100644
 --- a/tools/BUILD
