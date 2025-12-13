@@ -31,16 +31,21 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      # By default, docker would try to use Windows containers but we want to use
-      # Linux, which will match any conceivable setup for developers using docker
-      - uses: ./.github/actions/setup-wsl
-        if: startsWith(matrix.os, 'windows-')
-
       - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
 
       - run: uv lock --check
 
       - run: uv sync
+
+      - id: envoy-version
+        if: startsWith(matrix.os, 'windows-')
+        shell: bash
+        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
+
+      - uses: ./.github/actions/build-windows
+        if: startsWith(matrix.os, 'windows-')
+        with:
+          version: ${{ steps.envoy-version.outputs.version }}
 
       - name: run lints
         if: startsWith(matrix.os, 'ubuntu-')
@@ -51,9 +56,3 @@ jobs:
 
       - run: uv run poe wheels
         if: startsWith(matrix.os, 'ubuntu-')
-
-      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
-        if: github.event_name != 'pull_request' && startsWith(matrix.os, 'ubuntu-')
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
