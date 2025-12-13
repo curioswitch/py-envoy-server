@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 17b80cd744..3fe45e2411 100644
+index 17b80cd744..3d4c04ad0c 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -1,12 +1,13 @@
@@ -26,7 +26,7 @@ index 17b80cd744..3fe45e2411 100644
 +    name = "exported_symbols_windows",
 +    srcs = ["@envoy//source/extensions/dynamic_modules:abi.h"],
 +    outs = ["exported_symbols_windows.def"],
-+    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location abi.h) $@",
++    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location @envoy//source/extensions/dynamic_modules:abi.h) $@",
 +    tools = ["//tools:gen_dynamic_modules_windows_exports"],
 +)
 +
@@ -668,7 +668,7 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..bed29a8694 100644
+index dc0b799a35..ff35ea3d12 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
@@ -683,6 +683,12 @@ index dc0b799a35..bed29a8694 100644
  )
  
  envoy_cc_library(
+@@ -27,3 +30,5 @@ envoy_cc_library(
+         "abi_version.h",
+     ],
+ )
++
++exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index f07d6a23b1..dd178e0892 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
