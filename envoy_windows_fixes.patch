@@ -908,6 +908,26 @@ index 2d2b166c27..7580a79448 100644
  }
  } // namespace HttpFilters
  } // namespace DynamicModules
+diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.h b/source/extensions/filters/http/dynamic_modules/abi_impl.h
+new file mode 100644
+index 0000000000..e24ba27182
+--- /dev/null
++++ b/source/extensions/filters/http/dynamic_modules/abi_impl.h
+@@ -0,0 +1,14 @@
++#pragma once
++
++namespace Envoy {
++namespace Extensions {
++namespace DynamicModules {
++namespace HttpFilters {
++
++// This function is used to force the linker to include the abi_impl library.
++void force_link_abi_impl();
++
++} // namespace HttpFilters
++} // namespace DynamicModules
++} // namespace Extensions
++} // namespace Envoy
 diff --git a/source/extensions/filters/http/dynamic_modules/factory.cc b/source/extensions/filters/http/dynamic_modules/factory.cc
 index 775a255983..616e89dba0 100644
 --- a/source/extensions/filters/http/dynamic_modules/factory.cc
