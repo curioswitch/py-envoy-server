@@ -31,10 +31,10 @@ jobs:
           ref: v1.36.3
           path: out/envoy-build
 
-      #- uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
-      #  with:
-      #    disk-cache: v1.36.3-0
-      #    repository-cache: true
+      - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+        with:
+          disk-cache: v1.36.3-wip1
+          repository-cache: true
 
       - name: Apply patches
         shell: bash
@@ -68,8 +68,7 @@ jobs:
             --repo_env=PATH `
             --verbose_failures `
             --curses=no `
-            --noincompatible_strict_action_env `
-            //source/extensions/dynamic_modules:all
+            envoy
 
       - uses: actions/upload-artifact@v4
         with:

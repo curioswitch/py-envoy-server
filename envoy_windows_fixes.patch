@@ -1,5 +1,40 @@
+diff --git a/bazel/BUILD b/bazel/BUILD
+index 17b80cd744..51636627d4 100644
+--- a/bazel/BUILD
++++ b/bazel/BUILD
+@@ -1,12 +1,13 @@
+ load("@bazel_skylib//lib:selects.bzl", "selects")
+ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+ load("@envoy_api//bazel:repository_locations.bzl", API_REPOSITORY_LOCATIONS_SPEC = "REPOSITORY_LOCATIONS_SPEC")
+ load("@envoy_api//bazel:repository_locations_utils.bzl", "load_repository_locations_spec", "merge_dicts")
+ load("@envoy_toolshed//:macros.bzl", "json_data")
+ load("@envoy_toolshed//dependency:macros.bzl", "updater")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_shell//shell:sh_library.bzl", "sh_library")
+ load("//bazel:envoy_build_system.bzl", "envoy_package")
+-load("//bazel:envoy_internal.bzl", "envoy_select_force_libcpp")
+ load(":repository_locations.bzl", "REPOSITORY_LOCATIONS_SPEC")
+ 
+ licenses(["notice"])  # Apache 2
+@@ -68,6 +69,15 @@ genrule(
+     stamp = 1,
+ )
+ 
++# For Windows, which must list each exported symbol individually.
++genrule(
++    name = "exported_symbols_windows",
++    srcs = ["abi.h"],
++    outs = ["exported_symbols_windows.def"],
++    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location abi.h) $@",
++    tools = ["//tools:gen_dynamic_modules_windows_exports"],
++)
++
+ cc_library(
+     name = "static_stdlib",
+     linkopts = select({
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index 866a00f280..db447da5e6 100644
+index 866a00f280..968dfcf691 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -214,7 +214,10 @@ def envoy_exported_symbols_input():
@@ -8,7 +43,7 @@ index 866a00f280..db447da5e6 100644
          "@envoy//bazel:exported_symbols_apple.txt",
 -    ]
 +    ] + select({
-+        "@envoy//bazel:windows_x86_64": ["//source/extensions/dynamic_modules:exported_symbols_windows.def"],
++        "@envoy//bazel:windows_x86_64": ["//envoy/bazel:exported_symbols_windows.def"],
 +        "//conditions:default": [],
 +    })
  
@@ -19,7 +54,7 @@ index 866a00f280..db447da5e6 100644
              "-Wl,-exported_symbols_list,$(location @envoy//bazel:exported_symbols_apple.txt)",
          ],
 +        "@envoy//bazel:windows_x86_64": [
-+            "-DEF:$(location //source/extensions/dynamic_modules:exported_symbols_windows.def)",
++            "-DEF:$(location @envoy/bazel:exported_symbols_windows.def)",
 +        ],
          "//conditions:default": [],
      })
@@ -633,7 +668,7 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..1768da9d8a 100644
+index dc0b799a35..bed29a8694 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
@@ -648,19 +683,6 @@ index dc0b799a35..1768da9d8a 100644
  )
  
  envoy_cc_library(
-@@ -27,3 +30,12 @@ envoy_cc_library(
-         "abi_version.h",
-     ],
- )
-+
-+genrule(
-+    name = "exported_symbols_windows",
-+    srcs = ["abi.h"],
-+    outs = ["exported_symbols_windows.def"],
-+    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location abi.h) $@",
-+    tools = ["//tools:gen_dynamic_modules_windows_exports"],
-+    visibility = ["//visibility:public"],
-+)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index f07d6a23b1..dd178e0892 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
