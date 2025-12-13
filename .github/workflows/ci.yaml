@@ -53,5 +53,8 @@ jobs:
       - name: run tests
         run: uv run poe test
 
-      - run: uv run poe wheels
+      - run: uv run poe unix_wheels
         if: startsWith(matrix.os, 'ubuntu-')
+
+      - run: uv run poe build
+        if: startsWith(matrix.os, 'windows-')
