@@ -25,7 +25,7 @@ index 866a00f280..db447da5e6 100644
      })
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index dc07b536d3..8ba5532de8 100644
+index dc07b536d3..5075fed877 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -500,6 +500,7 @@ envoy_cmake(
@@ -51,7 +51,7 @@ index dc07b536d3..8ba5532de8 100644
  )
  
 +configure_make(
-+    name = "com_github_dlfcn_win32",
++    name = "libdl",
 +    configure_in_place = True,
 +    configure_options = [
 +        "--disable-shared",
@@ -63,7 +63,7 @@ index dc07b536d3..8ba5532de8 100644
 +cc_library(
 +    name = "dlfcn_win32",
 +    deps = select({
-+        "//bazel:windows_x86_64": [":com_github_dlfcn_win32"],
++        "//bazel:windows_x86_64": [":libdl"],
 +        "//conditions:default": [],
 +    }),
 +)
