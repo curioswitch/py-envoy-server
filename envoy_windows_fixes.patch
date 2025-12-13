@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 17b80cd744..51636627d4 100644
+index 17b80cd744..3fe45e2411 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -1,12 +1,13 @@
@@ -24,7 +24,7 @@ index 17b80cd744..51636627d4 100644
 +# For Windows, which must list each exported symbol individually.
 +genrule(
 +    name = "exported_symbols_windows",
-+    srcs = ["abi.h"],
++    srcs = ["@envoy//source/extensions/dynamic_modules:abi.h"],
 +    outs = ["exported_symbols_windows.def"],
 +    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location abi.h) $@",
 +    tools = ["//tools:gen_dynamic_modules_windows_exports"],
