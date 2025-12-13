@@ -130,7 +130,7 @@ index 465f8f55a0..59282fc945 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index d7fa4fa884..9dcf2f1088 100644
+index d7fa4fa884..1d693f90dc 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -1632,6 +1632,21 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -143,7 +143,7 @@ index d7fa4fa884..9dcf2f1088 100644
 +        project_url = "https://github.com/dlfcn-win32/dlfcn-win32",
 +        version = "1.4.2",
 +        sha256 = "f61a874bc9163ab488accb364fd681d109870c86e8071f4710cbcdcbaf9f2565",
-+        strip_prefix = "dlfcn-win32-v{version}",
++        strip_prefix = "dlfcn-win32-{version}",
 +        urls = ["https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/tags/v{version}.tar.gz"],
 +        use_category = ["dataplane_ext"],
 +        extensions = ["envoy.filters.http.dynamic_modules"],
