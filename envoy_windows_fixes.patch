@@ -609,7 +609,7 @@ index dc0b799a35..299e4c7679 100644
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..b82519267d 100644
+index f07d6a23b1..47bb7daf9f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
@@ -651,7 +651,16 @@ index f07d6a23b1..b82519267d 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -62,14 +68,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -56,20 +62,24 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+           "envoy_dynamic_module_on_program_init");
+ 
+   if (!init_function.ok()) {
++    std::cout << "Didn't get init_function" << std::endl;
+     return init_function.status();
+   }
+ 
++  std::cout << "Got init_function" << std::endl;
++
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -664,11 +673,12 @@ index f07d6a23b1..b82519267d 100644
          absl::StrCat("ABI version mismatch: got ", abi_version, ", but expected ", kAbiVersion));
    }
 -  return dynamic_module;
++  std::cout << "Ran init_function" << std::endl;
 +  return std::move(dynamic_module);
  }
  
  absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
-@@ -82,7 +88,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -82,7 +92,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
