@@ -609,27 +609,10 @@ index dc0b799a35..299e4c7679 100644
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..5a6f46e183 100644
+index f07d6a23b1..b82519267d 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -1,6 +1,16 @@
- #include "source/extensions/dynamic_modules/dynamic_modules.h"
- 
-+#ifdef WIN32
-+#include "dlfcn.h"
-+#ifndef RTLD_NOLOAD
-+#define RTLD_NOLOAD 0
-+#endif
-+#ifndef RTLD_NODELETE
-+#define RTLD_NODELETE 0
-+#endif
-+#else // WIN32
- #include <dlfcn.h>
-+#endif // WIN32
- 
- #include <string>
- 
-@@ -23,14 +33,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -650,11 +633,16 @@ index f07d6a23b1..5a6f46e183 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -43,10 +57,10 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -40,13 +44,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+     // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
+     mode |= RTLD_LOCAL;
+   }
++#ifndef _WIN32
    if (do_not_close) {
      mode |= RTLD_NODELETE;
    }
 -  handle = dlopen(object_file_absolute_path.c_str(), mode);
++#endif // _WIN32
 +  handle = dlopen(object_file_absolute_path.string().c_str(), mode);
    if (handle == nullptr) {
      return absl::InvalidArgumentError(absl::StrCat(
@@ -663,7 +651,7 @@ index f07d6a23b1..5a6f46e183 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -62,14 +76,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -62,14 +68,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -680,18 +668,266 @@ index f07d6a23b1..5a6f46e183 100644
  }
  
  absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
-@@ -82,7 +96,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -82,7 +88,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
-+#ifdef WIN32
-+      std::filesystem::absolute(fmt::format("{}/lib{}.dll", module_search_path, module_name));
++#ifdef _WIN32
++      std::filesystem::absolute(fmt::format("{}/{}.dll", module_search_path, module_name));
 +#else
        std::filesystem::absolute(fmt::format("{}/lib{}.so", module_search_path, module_name));
 +#endif
    return newDynamicModule(file_path_absolute, do_not_close, load_globally);
  }
  
+diff --git a/source/extensions/dynamic_modules/sdk/rust/Cargo.Bazel.lock b/source/extensions/dynamic_modules/sdk/rust/Cargo.Bazel.lock
+index d3bcae06f9..bb0a906ea7 100644
+--- a/source/extensions/dynamic_modules/sdk/rust/Cargo.Bazel.lock
++++ b/source/extensions/dynamic_modules/sdk/rust/Cargo.Bazel.lock
+@@ -1,5 +1,5 @@
+ {
+-  "checksum": "c0d467a39180d065453586687649d169eafc9222d6c3352463a214d2b1b6cf84",
++  "checksum": "87b387b26efadaa6411ffcbc0bd2792ebd2f77376f7fba5a6d716747ed1f6cef",
+   "crates": {
+     "aho-corasick 1.1.3": {
+       "name": "aho-corasick",
+@@ -86,14 +86,17 @@
+       ],
+       "license_file": "LICENSE-APACHE"
+     },
+-    "bindgen 0.70.1": {
++    "bindgen 0.72.0": {
+       "name": "bindgen",
+-      "version": "0.70.1",
++      "version": "0.72.0",
+       "package_url": "https://github.com/rust-lang/rust-bindgen",
+       "repository": {
+-        "Http": {
+-          "url": "https://static.crates.io/crates/bindgen/0.70.1/download",
+-          "sha256": "f49d8fed880d473ea71efb9bf597651e77201bdd4893efe54c9e5d65ae04ce6f"
++        "Git": {
++          "remote": "https://github.com/rust-lang/rust-bindgen.git",
++          "commitish": {
++            "Rev": "ccd563767ab1509f7c0eb68c6effc79eaf3684a9"
++          },
++          "strip_prefix": "bindgen"
+         }
+       },
+       "targets": [
+@@ -139,7 +142,7 @@
+         "deps": {
+           "common": [
+             {
+-              "id": "bindgen 0.70.1",
++              "id": "bindgen 0.72.0",
+               "target": "build_script_build"
+             },
+             {
+@@ -179,7 +182,7 @@
+               "target": "regex"
+             },
+             {
+-              "id": "rustc-hash 1.1.0",
++              "id": "rustc-hash 2.1.1",
+               "target": "rustc_hash"
+             },
+             {
+@@ -193,8 +196,8 @@
+           ],
+           "selects": {}
+         },
+-        "edition": "2018",
+-        "version": "0.70.1"
++        "edition": "2021",
++        "version": "0.72.0"
+       },
+       "build_script_attrs": {
+         "compile_data_glob": [
+@@ -392,6 +395,8 @@
+         ],
+         "crate_features": {
+           "common": [
++            "clang_10_0",
++            "clang_11_0",
+             "clang_3_5",
+             "clang_3_6",
+             "clang_3_7",
+@@ -400,6 +405,9 @@
+             "clang_4_0",
+             "clang_5_0",
+             "clang_6_0",
++            "clang_7_0",
++            "clang_8_0",
++            "clang_9_0",
+             "libloading",
+             "runtime"
+           ],
+@@ -599,7 +607,7 @@
+         "deps": {
+           "common": [
+             {
+-              "id": "bindgen 0.70.1",
++              "id": "bindgen 0.72.0",
+               "target": "bindgen"
+             }
+           ],
+@@ -1731,14 +1739,14 @@
+       ],
+       "license_file": "LICENSE-APACHE"
+     },
+-    "rustc-hash 1.1.0": {
++    "rustc-hash 2.1.1": {
+       "name": "rustc-hash",
+-      "version": "1.1.0",
+-      "package_url": "https://github.com/rust-lang-nursery/rustc-hash",
++      "version": "2.1.1",
++      "package_url": "https://github.com/rust-lang/rustc-hash",
+       "repository": {
+         "Http": {
+-          "url": "https://static.crates.io/crates/rustc-hash/1.1.0/download",
+-          "sha256": "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
++          "url": "https://static.crates.io/crates/rustc-hash/2.1.1/download",
++          "sha256": "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+         }
+       },
+       "targets": [
+@@ -1767,10 +1775,10 @@
+           ],
+           "selects": {}
+         },
+-        "edition": "2015",
+-        "version": "1.1.0"
++        "edition": "2021",
++        "version": "2.1.1"
+       },
+-      "license": "Apache-2.0/MIT",
++      "license": "Apache-2.0 OR MIT",
+       "license_ids": [
+         "Apache-2.0",
+         "MIT"
+@@ -2767,7 +2775,7 @@
+     ]
+   },
+   "direct_deps": [
+-    "bindgen 0.70.1",
++    "bindgen 0.72.0",
+     "mockall 0.13.1"
+   ],
+   "direct_dev_deps": [],
+diff --git a/source/extensions/dynamic_modules/sdk/rust/Cargo.lock b/source/extensions/dynamic_modules/sdk/rust/Cargo.lock
+index 6c8f493635..6ccbeee1a2 100644
+--- a/source/extensions/dynamic_modules/sdk/rust/Cargo.lock
++++ b/source/extensions/dynamic_modules/sdk/rust/Cargo.lock
+@@ -19,9 +19,8 @@ checksum = "55cc3b69f167a1ef2e161439aa98aed94e6028e5f9a59be9a6ffb47aef1651f9"
+ 
+ [[package]]
+ name = "bindgen"
+-version = "0.70.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f49d8fed880d473ea71efb9bf597651e77201bdd4893efe54c9e5d65ae04ce6f"
++version = "0.72.0"
++source = "git+https://github.com/rust-lang/rust-bindgen.git?rev=ccd563767ab1509f7c0eb68c6effc79eaf3684a9#ccd563767ab1509f7c0eb68c6effc79eaf3684a9"
+ dependencies = [
+  "bitflags",
+  "cexpr",
+@@ -265,9 +264,9 @@ checksum = "7a66a03ae7c801facd77a29370b4faec201768915ac14a721ba36f20bc9c209b"
+ 
+ [[package]]
+ name = "rustc-hash"
+-version = "1.1.0"
++version = "2.1.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
++checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+ 
+ [[package]]
+ name = "shlex"
+diff --git a/source/extensions/dynamic_modules/sdk/rust/Cargo.toml b/source/extensions/dynamic_modules/sdk/rust/Cargo.toml
+index e2d871a3e2..4217d2c21a 100644
+--- a/source/extensions/dynamic_modules/sdk/rust/Cargo.toml
++++ b/source/extensions/dynamic_modules/sdk/rust/Cargo.toml
+@@ -11,6 +11,6 @@ repository = "https://github.com/envoyproxy/envoy"
+ mockall = "0.13.1"
+ 
+ [build-dependencies]
+-bindgen = "0.70.1"
++bindgen = { git = "https://github.com/rust-lang/rust-bindgen.git", rev = "ccd563767ab1509f7c0eb68c6effc79eaf3684a9" }
+ 
+ [lib]
+diff --git a/source/extensions/dynamic_modules/sdk/rust/build.rs b/source/extensions/dynamic_modules/sdk/rust/build.rs
+index 440914422f..0c7ffe3537 100644
+--- a/source/extensions/dynamic_modules/sdk/rust/build.rs
++++ b/source/extensions/dynamic_modules/sdk/rust/build.rs
+@@ -24,8 +24,12 @@ fn main() {
+       non_exhaustive: false,
+     })
+     .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+-    .parse_callbacks(Box::new(TrimEnumNameFromVariantName))
+-    .generate()
++    .parse_callbacks(Box::new(TrimEnumNameFromVariantName));
++
++    #[cfg(target_os = "windows")]
++    let bindings = bindings.extern_fn_block_attrs("#[link(name = \"envoy\", kind = \"raw-dylib\")]");
++
++    let bindings = bindings.generate()
+     .expect("Unable to generate bindings");
+ 
+   let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+diff --git a/source/extensions/filters/http/dynamic_modules/BUILD b/source/extensions/filters/http/dynamic_modules/BUILD
+index 05cbf4ca4c..b3e1e6f12b 100644
+--- a/source/extensions/filters/http/dynamic_modules/BUILD
++++ b/source/extensions/filters/http/dynamic_modules/BUILD
+@@ -53,6 +53,7 @@ envoy_cc_extension(
+ envoy_cc_library(
+     name = "abi_impl",
+     srcs = ["abi_impl.cc"],
++    hdrs = ["abi_impl.h"],
+     deps = [
+         ":filter_lib",
+         "//source/common/http:utility_lib",
+diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.cc b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
+index 2d2b166c27..7580a79448 100644
+--- a/source/extensions/filters/http/dynamic_modules/abi_impl.cc
++++ b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
+@@ -5,6 +5,8 @@
+ #include "source/extensions/dynamic_modules/abi.h"
+ #include "source/extensions/filters/http/dynamic_modules/filter.h"
+ 
++#include "source/extensions/filters/http/dynamic_modules/abi_impl.h"
++
+ namespace Envoy {
+ namespace Extensions {
+ namespace DynamicModules {
+@@ -1508,6 +1510,9 @@ void envoy_dynamic_module_callback_log(envoy_dynamic_module_type_log_level level
+     break;
+   }
+ }
++
++void force_link_abi_impl() {}
++
+ }
+ } // namespace HttpFilters
+ } // namespace DynamicModules
+diff --git a/source/extensions/filters/http/dynamic_modules/factory.cc b/source/extensions/filters/http/dynamic_modules/factory.cc
+index 775a255983..616e89dba0 100644
+--- a/source/extensions/filters/http/dynamic_modules/factory.cc
++++ b/source/extensions/filters/http/dynamic_modules/factory.cc
+@@ -1,5 +1,6 @@
+ #include "source/extensions/filters/http/dynamic_modules/factory.h"
+ 
++#include "source/extensions/filters/http/dynamic_modules/abi_impl.h"
+ #include "source/extensions/filters/http/dynamic_modules/filter.h"
+ #include "source/extensions/filters/http/dynamic_modules/filter_config.h"
+ 
+@@ -11,6 +12,8 @@ absl::StatusOr<Http::FilterFactoryCb> DynamicModuleConfigFactory::createFilterFa
+     const FilterConfig& proto_config, const std::string&, DualInfo dual_info,
+     Server::Configuration::ServerFactoryContext& context) {
+ 
++  Extensions::DynamicModules::HttpFilters::force_link_abi_impl();
++
+   const auto& module_config = proto_config.dynamic_module_config();
+   auto dynamic_module = Extensions::DynamicModules::newDynamicModuleByName(
+       module_config.name(), module_config.do_not_close(), module_config.load_globally());
 diff --git a/tools/BUILD b/tools/BUILD
 index 94892810c9..641883c9f5 100644
 --- a/tools/BUILD
