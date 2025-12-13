@@ -69,7 +69,7 @@ jobs:
             --verbose_failures `
             --curses=no `
             --noincompatible_strict_action_env `
-            envoy
+            //source/extensions/dynamic_modules/...
 
       - uses: actions/upload-artifact@v4
         with:

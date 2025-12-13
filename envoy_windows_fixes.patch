@@ -1,33 +1,5 @@
-diff --git a/WORKSPACE b/WORKSPACE
-index e4460bfc54..4f2feff1d1 100644
---- a/WORKSPACE
-+++ b/WORKSPACE
-@@ -1,5 +1,23 @@
- workspace(name = "envoy")
- 
-+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-+
-+http_archive(
-+    name = "dlfcn-win32",
-+    build_file_content = """
-+cc_library(
-+    name = "dlfcn-win32",
-+    srcs = ["src/dlfcn.c"],
-+    hdrs = ["src/dlfcn.h"],
-+    includes = ["src"],
-+    visibility = ["//visibility:public"],
-+)
-+""",
-+    strip_prefix = "dlfcn-win32-1.4.1",
-+    url = "https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/tags/v1.4.1.tar.gz",
-+    sha256 = "30a9f72bdf674857899eb7e553df1f0d362c5da2a576ae51f886e1171fbdb399",
-+)
-+
- load("//bazel:api_binding.bzl", "envoy_api_binding")
- 
- envoy_api_binding()
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index 866a00f280..8552fbec63 100644
+index 866a00f280..db447da5e6 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -214,7 +214,10 @@ def envoy_exported_symbols_input():
@@ -36,7 +8,7 @@ index 866a00f280..8552fbec63 100644
          "@envoy//bazel:exported_symbols_apple.txt",
 -    ]
 +    ] + select({
-+        "@envoy//bazel:windows_x86_64": ["//source/extensions/dynamic_modules:dynamic_modules_exports.def"],
++        "@envoy//bazel:windows_x86_64": ["//source/extensions/dynamic_modules:exported_symbols_windows.def"],
 +        "//conditions:default": [],
 +    })
  
@@ -47,13 +19,13 @@ index 866a00f280..8552fbec63 100644
              "-Wl,-exported_symbols_list,$(location @envoy//bazel:exported_symbols_apple.txt)",
          ],
 +        "@envoy//bazel:windows_x86_64": [
-+            "-DEF:$(location //source/extensions/dynamic_modules:dynamic_modules_exports.def)",
++            "-DEF:$(location //source/extensions/dynamic_modules:exported_symbols_windows.def)",
 +        ],
          "//conditions:default": [],
      })
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index dc07b536d3..ddf1f24123 100644
+index dc07b536d3..ca7556f4da 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -500,6 +500,7 @@ envoy_cmake(
@@ -74,8 +46,60 @@ index dc07b536d3..ddf1f24123 100644
      generate_args = [
          "-G",
          "Ninja",
+@@ -580,6 +584,24 @@ envoy_cmake(
+     working_directory = "build/cmake",
+ )
+ 
++configure_make(
++    name = "com_github_dlfcn_win32",
++    configure_in_place = True,
++    configure_options = [
++        "--disable-shared",
++        "--enable-static",
++    ],
++    lib_source = "@dlfcn-win32//:all",
++)
++
++cc_library(
++    name = "dlfcn_win32",
++    deps = select({
++        "//bazel:windows_x86_64": [":com_github_dlfcn_win32"],
++        "//conditions:default": [],
++    }),
++)
++
+ envoy_cmake(
+     name = "maxmind",
+     build_args = select({
+diff --git a/bazel/foreign_cc/luajit.patch b/bazel/foreign_cc/luajit.patch
+index ab525a950f..14ae99c9b0 100644
+--- a/bazel/foreign_cc/luajit.patch
++++ b/bazel/foreign_cc/luajit.patch
+@@ -56,7 +56,7 @@ new file mode 100755
+ index 00000000..1201542c
+ --- /dev/null
+ +++ b/build.py
+-@@ -0,0 +1,52 @@
++@@ -0,0 +1,59 @@
+ +#!/usr/bin/env python3
+ +
+ +import argparse
+@@ -95,6 +95,13 @@ index 00000000..1201542c
+ +    dst_dir = os.getcwd() + "/luajit"
+ +    shutil.copytree(src_dir, os.path.basename(src_dir))
+ +    os.chdir(os.path.basename(src_dir) + "/src")
+++    # Align link flags with Envoy
+++    with open("msvcbuild.bat", "r") as f:
+++        content = f.read()
+++    content = content.replace("/Zi", "/Z7")
+++    content = content.replace("/MD", "/MT")
+++    with open("msvcbuild.bat", "w") as f:
+++        f.write(content)
+ +    os.system('msvcbuild.bat ' + os.getenv('WINDOWS_DBG_BUILD', '') + ' static')
+ +    os.makedirs(dst_dir + "/lib", exist_ok=True)
+ +    shutil.copy("lua51.lib", dst_dir + "/lib")
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 465f8f55a0..4b50850526 100644
+index 465f8f55a0..de043eb805 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -87,27 +111,59 @@ index 465f8f55a0..4b50850526 100644
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
-@@ -920,7 +922,11 @@ def _com_github_luajit_luajit():
-         build_file_content = BUILD_ALL_CONTENT,
-         patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
-         patch_args = ["-p1"],
--        patch_cmds = ["chmod u+x build.py"],
-+        patch_cmds = [
-+            "chmod u+x build.py",
-+            "sed -i 's|/Zi|/Z7|g' src/msvcbuild.bat",
-+            "sed -i 's|/MD|/MT|g' src/msvcbuild.bat",
-+        ],
-     )
+@@ -222,6 +224,7 @@ def envoy_dependencies(skip_targets = []):
+     external_http_archive("envoy_examples")
+     external_http_archive("envoy_toolshed")
  
- def _com_github_google_tcmalloc():
++    _com_github_dlfcn_win32()
+     _com_github_maxmind_libmaxminddb()
+ 
+     external_http_archive("rules_license")
+@@ -1044,3 +1047,9 @@ def _com_github_maxmind_libmaxminddb():
+         name = "com_github_maxmind_libmaxminddb",
+         build_file_content = BUILD_ALL_CONTENT,
+     )
++
++def _com_github_dlfcn_win32():
++    external_http_archive(
++        name = "com_github_dlfcn_win32",
++        build_file_content = BUILD_ALL_CONTENT,
++    )
+\ No newline at end of file
+diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
+index d7fa4fa884..9dcf2f1088 100644
+--- a/bazel/repository_locations.bzl
++++ b/bazel/repository_locations.bzl
+@@ -1632,6 +1632,21 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+         license = "Apache-2.0",
+         license_url = "https://github.com/bazelbuild/rules_license/blob/{version}/LICENSE",
+     ),
++    com_github_dlfcn_win32 = dict(
++        project_name = "dlfcn-win32",
++        project_desc = "An implementation of dlfcn for Windows.",
++        project_url = "https://github.com/dlfcn-win32/dlfcn-win32",
++        version = "1.4.2",
++        sha256 = "f61a874bc9163ab488accb364fd681d109870c86e8071f4710cbcdcbaf9f2565",
++        strip_prefix = "dlfcn-win32-v{version}",
++        urls = ["https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/tags/v{version}.tar.gz"],
++        use_category = ["dataplane_ext"],
++        extensions = ["envoy.filters.http.dynamic_modules"],
++        release_date = "2025-03-05",
++        cpe = "N/A",
++        license = "MIT",
++        license_url = "https://github.com/dlfcn-win32/dlfcn-win32/blob/v{version}/COPYING",
++    ),
+     com_github_maxmind_libmaxminddb = dict(
+         project_name = "maxmind_libmaxminddb",
+         project_desc = "C library for reading MaxMind DB files",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
-index 08f2227c4f..bf804eef12 100644
+index 08f2227c4f..712964009d 100644
 --- a/envoy/api/os_sys_calls.h
 +++ b/envoy/api/os_sys_calls.h
 @@ -1,6 +1,8 @@
  #pragma once
  
-+#ifndef WIN32
++#ifndef _WIN32
  #include <sys/resource.h>
 +#endif
  #include <sys/stat.h>
@@ -117,26 +173,25 @@ index 08f2227c4f..bf804eef12 100644
  #include "envoy/common/pure.h"
  #include "envoy/network/address.h"
  
-+#ifdef WIN32
++#ifdef _WIN32
 +struct rlimit {
 +  int rlim_cur;
 +  int rlim_max;
 +};
 +#define RLIMIT_NOFILE 7
-+#endif
++#endif // _WIN32
 +
  namespace Envoy {
  namespace Api {
  
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
-index 42075f881f..e60f2e02c8 100644
+index 42075f881f..58a4c15ae8 100644
 --- a/envoy/common/platform.h
 +++ b/envoy/common/platform.h
-@@ -69,11 +69,15 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
+@@ -69,11 +69,14 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
  
  typedef unsigned int sa_family_t;
  
-+
 +#ifndef _STRUCT_IOVEC
  // Posix structure for scatter/gather I/O, not present on Windows.
  struct iovec {
@@ -144,7 +199,7 @@ index 42075f881f..e60f2e02c8 100644
    size_t iov_len;
  };
 +#define _STRUCT_IOVEC
-+#endif  // _STRUCT_IOVEC
++#endif // _STRUCT_IOVEC
  
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
@@ -191,23 +246,22 @@ index 7fda90aa08..dc32868f62 100644
    }
    const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
-index c1beac6a52..21803b910e 100644
+index c1beac6a52..c98902b2e3 100644
 --- a/source/common/common/win32/thread_impl.cc
 +++ b/source/common/common/win32/thread_impl.cc
-@@ -22,9 +22,9 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
+@@ -22,9 +22,8 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
          return 0;
        },
        this, 0, nullptr));
 -  if (options && options.thread_priority_ &&
 -      !SetThreadPriority(thread_handle_, *options.thread_priority_)) {
 -    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options.thread_priority_);
-+  if (options && options->priority_ &&
-+      !SetThreadPriority(thread_handle_, *options->priority_)) {
++  if (options && options->priority_ && !SetThreadPriority(thread_handle_, *options->priority_)) {
 +    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options->priority_);
    }
    RELEASE_ASSERT(thread_handle_ != 0, "");
  }
-@@ -41,7 +41,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
+@@ -41,7 +40,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
    return std::make_unique<ThreadImplWin32>(thread_routine, options);
  }
  
@@ -293,40 +347,42 @@ index f45e7f74b2..f715987527 100644
        std::free(p);
  #endif
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
-index dcf868020f..0383cb470d 100644
+index dcf868020f..4104956251 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 @@ -1,8 +1,12 @@
  #include "source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h"
  
-+#ifndef WIN32
++#ifndef _WIN32
  #include <arpa/inet.h>
  #include <netinet/in.h>
  #include <sys/socket.h>
 +#else
 +#include <winsock2.h>
-+#endif // WIN32
++#endif // _WIN32
  
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-index 7d0f78a501..c934a2b793 100644
+index 7d0f78a501..a2254cc7e0 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-@@ -1,7 +1,11 @@
+@@ -1,8 +1,13 @@
  #pragma once
  
-+#ifndef WIN32
++#ifndef _WIN32
  #include <netinet/in.h>
  #include <sys/socket.h>
+ 
 +#else
 +#include <winsock2.h>
-+#endif // WIN32
- 
++#endif // _WIN32
++
  #include <functional>
  
+ #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index b8b5c5fe69..bff4cb4dc6 100644
+index b8b5c5fe69..cbdce5b1fb 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -10,6 +10,7 @@
@@ -369,17 +425,18 @@ index b8b5c5fe69..bff4cb4dc6 100644
      ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
      fd_ = trigger_fd;
    }
-@@ -190,7 +192,8 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+@@ -190,7 +192,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
    ENVOY_LOG(debug, "ReverseConnectionIOHandle: accept() called");
    if (isTriggerPipeReady()) {
      char trigger_byte;
 -    ssize_t bytes_read = ::read(trigger_pipe_read_fd_, &trigger_byte, 1);
 +    auto& os_sys_calls = Api::OsSysCallsSingleton::get();
-+    ssize_t bytes_read = os_sys_calls.recv(trigger_pipe_read_fd_, &trigger_byte, 1, 0).return_value_;
++    ssize_t bytes_read =
++        os_sys_calls.recv(trigger_pipe_read_fd_, &trigger_byte, 1, 0).return_value_;
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "ReverseConnectionIOHandle: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -365,7 +368,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -365,7 +369,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "ReverseConnectionIOHandle: event: {}", static_cast<int>(event));
  }
  
@@ -388,7 +445,7 @@ index b8b5c5fe69..bff4cb4dc6 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1034,30 +1037,34 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1034,30 +1038,33 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "ReverseConnectionIOHandle: Creating trigger pipe for single-byte mechanism");
@@ -399,13 +456,12 @@ index b8b5c5fe69..bff4cb4dc6 100644
 -    trigger_pipe_write_fd_ = -1;
 +  os_fd_t pipe_fds[2];
 +  auto& os_sys_calls = Api::OsSysCallsSingleton::get();
-+#ifdef WIN32
++#ifdef _WIN32
 +  // On Windows, we use AF_INET to emulate a pipe with a TCP socket pair.
 +  const int domain = AF_INET;
 +#else
-+  // On POSIX, we use AF_UNIX.
 +  const int domain = AF_UNIX;
-+#endif
++#endif // _WIN32
 +  auto result = os_sys_calls.socketpair(domain, SOCK_STREAM, 0, pipe_fds);
 +  if (result.return_value_ != 0) {
 +    ENVOY_LOG(error, "Failed to create trigger pipe: {}", errorDetails(result.errno_));
@@ -543,21 +599,23 @@ index 05e34f7933..d333caff75 100644
  #include <cstdint>
  #include <list>
 diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
-index 3241cab9ad..abee5c8080 100644
+index 3241cab9ad..e05d11fca2 100644
 --- a/source/extensions/clusters/reverse_connection/reverse_connection.h
 +++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
-@@ -1,7 +1,11 @@
+@@ -1,8 +1,13 @@
  #pragma once
  
 +#ifndef _WIN32
  #include <netinet/in.h>
  #include <sys/socket.h>
+ 
 +#else
 +#include <winsock2.h>
-+#endif // WIN32
- 
++#endif // _WIN32
++
  #include <cstdint>
  #include <cstring>
+ #include <functional>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
 index 30efe81fc3..f71a587f67 100644
 --- a/source/extensions/common/aws/BUILD
@@ -571,25 +629,16 @@ index 30efe81fc3..f71a587f67 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index dc0b799a35..299e4c7679 100644
+index dc0b799a35..1768da9d8a 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
-@@ -4,7 +4,7 @@ load(
-     "envoy_extension_package",
- )
- 
--licenses(["notice"])  # Apache 2
-+licenses(["notice"])  # Apache 2 CACHE7
- 
- envoy_extension_package()
- 
 @@ -18,7 +18,10 @@ envoy_cc_library(
      deps = [
          ":abi_version_lib",
          "//envoy/common:exception_lib",
 -    ],
 +    ] + select({
-+        "//bazel:windows_x86_64": ["@dlfcn-win32//:dlfcn-win32"],
++        "//bazel:windows_x86_64": ["//bazel/foreign_cc:dlfcn_win32"],
 +        "//conditions:default": [],
 +    }),
  )
@@ -601,15 +650,15 @@ index dc0b799a35..299e4c7679 100644
  )
 +
 +genrule(
-+    name = "dynamic_modules_exports",
++    name = "exported_symbols_windows",
 +    srcs = ["abi.h"],
-+    outs = ["dynamic_modules_exports.def"],
-+    cmd = "$(location //tools:gen_dynamic_modules_def) $(location abi.h) $@",
-+    tools = ["//tools:gen_dynamic_modules_def"],
++    outs = ["exported_symbols_windows.def"],
++    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location abi.h) $@",
++    tools = ["//tools:gen_dynamic_modules_windows_exports"],
 +    visibility = ["//visibility:public"],
 +)
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index f07d6a23b1..b82519267d 100644
+index f07d6a23b1..dd178e0892 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
@@ -672,11 +721,11 @@ index f07d6a23b1..b82519267d 100644
                                                     " is not set"));
    }
    const std::filesystem::path file_path_absolute =
-+#ifdef _WIN32
-+      std::filesystem::absolute(fmt::format("{}/{}.dll", module_search_path, module_name));
-+#else
++#ifndef _WIN32
        std::filesystem::absolute(fmt::format("{}/lib{}.so", module_search_path, module_name));
-+#endif
++#else
++      std::filesystem::absolute(fmt::format("{}/{}.dll", module_search_path, module_name));
++#endif // _WIN32
    return newDynamicModule(file_path_absolute, do_not_close, load_globally);
  }
  
@@ -874,7 +923,7 @@ index 440914422f..0c7ffe3537 100644
  
    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 diff --git a/tools/BUILD b/tools/BUILD
-index 94892810c9..641883c9f5 100644
+index 94892810c9..ab077485b7 100644
 --- a/tools/BUILD
 +++ b/tools/BUILD
 @@ -10,6 +10,12 @@ exports_files([
@@ -882,20 +931,20 @@ index 94892810c9..641883c9f5 100644
  ])
  
 +py_binary(
-+    name = "gen_dynamic_modules_def",
-+    srcs = ["gen_dynamic_modules_def.py"],
++    name = "gen_dynamic_modules_windows_exports",
++    srcs = ["gen_dynamic_modules_windows_exports.py"],
 +    visibility = ["//visibility:public"],
 +)
 +
  py_binary(
      name = "stack_decode",
      srcs = ["stack_decode.py"],
-diff --git a/tools/gen_dynamic_modules_def.py b/tools/gen_dynamic_modules_def.py
+diff --git a/tools/gen_dynamic_modules_windows_exports.py b/tools/gen_dynamic_modules_windows_exports.py
 new file mode 100644
-index 0000000000..a491b8d087
+index 0000000000..30248f5e6c
 --- /dev/null
-+++ b/tools/gen_dynamic_modules_def.py
-@@ -0,0 +1,32 @@
++++ b/tools/gen_dynamic_modules_windows_exports.py
+@@ -0,0 +1,28 @@
 +import re
 +import sys
 +
@@ -911,10 +960,6 @@ index 0000000000..a491b8d087
 +        content = f.read()
 +
 +    # Find all function declarations starting with envoy_dynamic_module_callback_
-+    # We assume they look like "void envoy_dynamic_module_callback_foo(...);"
-+    # The regex captures the function name.
-+    # We look for the return type (void or others), whitespace, then the function name.
-+    # Based on abi.h, they seem to be mostly void, but let's be generic.
 +    # Example: void envoy_dynamic_module_callback_http_get_header(
 +    matches = re.findall(r'\b(envoy_dynamic_module_callback_\w+)\(', content)
 +
