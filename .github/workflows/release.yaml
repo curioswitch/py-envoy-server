@@ -19,7 +19,7 @@ jobs:
       - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
 
       - name: Build wheels
-        run: uv run poe unix_wheels
+        run: uv run poe unix-wheels
 
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:

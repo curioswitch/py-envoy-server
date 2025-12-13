@@ -35,6 +35,6 @@ help = "Runs tests"
 deps = ["build"]
 cmd = "pytest"
 
-[tasks.unix_wheels]
+[tasks.unix-wheels]
 help = "Builds the wheels for Linux and macOS"
 script = "scripts.build:unix_wheels"
