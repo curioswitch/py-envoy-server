@@ -26,6 +26,10 @@ cmd = "ruff check ."
 help = "Lints code"
 sequence = ["lint-python"]
 
+[tasks.print-envoy-version]
+help = "Prints the targeted Envoy version"
+script = "scripts.build:print_envoy_version"
+
 [tasks.test]
 help = "Runs tests"
 deps = ["build"]

@@ -19,6 +19,14 @@ bin_dir = Path(__file__).parent.parent / "envoy" / "_bin"
 envoy_path = bin_dir / "envoy"
 
 
+def _get_envoy_version() -> str:
+    pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")
+    version = f"v{pyproject['project']['version']}"
+    if (post_idx := version.find(".post")) >= 0:
+        version = version[:post_idx]
+    return version
+
+
 def build(os: str | None = None, arch: str | None = None) -> None:
     if os is None or arch is None:
         machine = platform.machine().lower()
@@ -37,10 +45,7 @@ def build(os: str | None = None, arch: str | None = None) -> None:
 
     bin_dir.mkdir(parents=True, exist_ok=True)
 
-    pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")
-    version = f"v{pyproject['project']['version']}"
-    if (post_idx := version.find(".post")) >= 0:
-        version = version[:post_idx]
+    version = _get_envoy_version()
 
     match os:
         case "darwin":
@@ -100,3 +105,7 @@ def wheels() -> None:
     # because we leave them with the default platform tag.
     envoy_path.unlink(missing_ok=True)
     subprocess.run(["uv", "build"], check=True)
+
+
+def print_envoy_version() -> None:
+    print(_get_envoy_version(), end="")

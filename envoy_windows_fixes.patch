@@ -156,19 +156,20 @@ index d7fa4fa884..1d693f90dc 100644
          project_name = "maxmind_libmaxminddb",
          project_desc = "C library for reading MaxMind DB files",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
-index 08f2227c4f..712964009d 100644
+index 08f2227c4f..85f6c25af3 100644
 --- a/envoy/api/os_sys_calls.h
 +++ b/envoy/api/os_sys_calls.h
-@@ -1,6 +1,8 @@
+@@ -1,6 +1,9 @@
  #pragma once
  
 +#ifndef _WIN32
  #include <sys/resource.h>
++
 +#endif
  #include <sys/stat.h>
  
  #include <chrono>
-@@ -13,6 +15,14 @@
+@@ -13,6 +16,14 @@
  #include "envoy/common/pure.h"
  #include "envoy/network/address.h"
  
