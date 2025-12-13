@@ -886,7 +886,7 @@ index 05cbf4ca4c..b3e1e6f12b 100644
          ":filter_lib",
          "//source/common/http:utility_lib",
 diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.cc b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
-index 2d2b166c27..7580a79448 100644
+index 2d2b166c27..7418832c4c 100644
 --- a/source/extensions/filters/http/dynamic_modules/abi_impl.cc
 +++ b/source/extensions/filters/http/dynamic_modules/abi_impl.cc
 @@ -5,6 +5,8 @@
@@ -898,16 +898,18 @@ index 2d2b166c27..7580a79448 100644
  namespace Envoy {
  namespace Extensions {
  namespace DynamicModules {
-@@ -1508,6 +1510,9 @@ void envoy_dynamic_module_callback_log(envoy_dynamic_module_type_log_level level
+@@ -1508,7 +1510,11 @@ void envoy_dynamic_module_callback_log(envoy_dynamic_module_type_log_level level
      break;
    }
  }
 +
+ }
++
 +void force_link_abi_impl() {}
 +
- }
  } // namespace HttpFilters
  } // namespace DynamicModules
+ } // namespace Extensions
 diff --git a/source/extensions/filters/http/dynamic_modules/abi_impl.h b/source/extensions/filters/http/dynamic_modules/abi_impl.h
 new file mode 100644
 index 0000000000..e24ba27182
