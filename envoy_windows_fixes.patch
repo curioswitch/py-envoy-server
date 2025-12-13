@@ -34,7 +34,7 @@ index 17b80cd744..51636627d4 100644
      name = "static_stdlib",
      linkopts = select({
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index 866a00f280..968dfcf691 100644
+index 866a00f280..07b7e39291 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -214,7 +214,10 @@ def envoy_exported_symbols_input():
@@ -43,7 +43,7 @@ index 866a00f280..968dfcf691 100644
          "@envoy//bazel:exported_symbols_apple.txt",
 -    ]
 +    ] + select({
-+        "@envoy//bazel:windows_x86_64": ["//envoy/bazel:exported_symbols_windows.def"],
++        "@envoy//bazel:windows_x86_64": ["//bazel:exported_symbols_windows.def"],
 +        "//conditions:default": [],
 +    })
  
@@ -54,7 +54,7 @@ index 866a00f280..968dfcf691 100644
              "-Wl,-exported_symbols_list,$(location @envoy//bazel:exported_symbols_apple.txt)",
          ],
 +        "@envoy//bazel:windows_x86_64": [
-+            "-DEF:$(location @envoy/bazel:exported_symbols_windows.def)",
++            "-DEF:$(location //bazel:exported_symbols_windows.def)",
 +        ],
          "//conditions:default": [],
      })
