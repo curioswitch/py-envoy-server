@@ -25,7 +25,7 @@ index 866a00f280..db447da5e6 100644
      })
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index dc07b536d3..ca7556f4da 100644
+index dc07b536d3..8ba5532de8 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -500,6 +500,7 @@ envoy_cmake(
@@ -57,7 +57,7 @@ index dc07b536d3..ca7556f4da 100644
 +        "--disable-shared",
 +        "--enable-static",
 +    ],
-+    lib_source = "@dlfcn-win32//:all",
++    lib_source = "@com_github_dlfcn_win32//:all",
 +)
 +
 +cc_library(
@@ -99,7 +99,7 @@ index ab525a950f..14ae99c9b0 100644
  +    os.makedirs(dst_dir + "/lib", exist_ok=True)
  +    shutil.copy("lua51.lib", dst_dir + "/lib")
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 465f8f55a0..de043eb805 100644
+index 465f8f55a0..59282fc945 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -129,7 +129,6 @@ index 465f8f55a0..de043eb805 100644
 +        name = "com_github_dlfcn_win32",
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
-\ No newline at end of file
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
 index d7fa4fa884..9dcf2f1088 100644
 --- a/bazel/repository_locations.bzl
