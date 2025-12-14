@@ -28,7 +28,6 @@ jobs:
 
   build-windows:
     runs-on: windows-2025
-    environment: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
@@ -45,6 +44,22 @@ jobs:
       - name: Build wheel
         run: uv run poe build
 
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-wheels
+          path: dist/
+
+  publish-windows:
+    needs: build-windows
+    runs-on: ubuntu-24.04
+    environment: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: windows-wheels
+          path: dist/
+
+      # Only supports unix runner
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           repository-url: ${{ github.event_name != 'push' && 'https://test.pypi.org/legacy/' || null }}
