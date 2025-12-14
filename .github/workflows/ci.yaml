@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  attestations: write
-  id-token: write
 
 concurrency:
   # Cancel in-progress jobs for PRs only
@@ -24,9 +22,7 @@ jobs:
         os:
           - macos-15
           - ubuntu-24.04
-          - windows-2025
     runs-on: ${{ matrix.os }}
-    environment: ${{ github.event_name != 'pull_request' && 'dev' || null }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
@@ -35,16 +31,6 @@ jobs:
       - run: uv lock --check
 
       - run: uv sync
-
-      - id: envoy-version
-        if: startsWith(matrix.os, 'windows-')
-        shell: bash
-        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
-
-      - uses: ./.github/actions/build-windows
-        if: startsWith(matrix.os, 'windows-')
-        with:
-          version: ${{ steps.envoy-version.outputs.version }}
 
       - name: run lints
         if: startsWith(matrix.os, 'ubuntu-')
@@ -55,6 +41,3 @@ jobs:
 
       - run: uv run poe unix-wheels
         if: startsWith(matrix.os, 'ubuntu-')
-
-      - run: uv run poe build
-        if: startsWith(matrix.os, 'windows-')
