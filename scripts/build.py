@@ -106,11 +106,6 @@ def unix_wheels() -> None:
                 continue
             build(os, arch)
 
-    # Build cross-platform Docker-dependent wheels / sdist last
-    # because we leave them with the default platform tag.
-    envoy_path.unlink(missing_ok=True)
-    subprocess.run(["uv", "build"], check=True)
-
 
 def print_envoy_version() -> None:
     print(_get_envoy_version(), end="")
