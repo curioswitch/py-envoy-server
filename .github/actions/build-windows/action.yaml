@@ -1,0 +1,69 @@
+name: Build Windows Envoy
+description: Build Envoy for Windows using Bazel
+
+inputs:
+  version:
+    description: "Envoy version to build"
+    required: true
+  repository:
+    description: "GitHub repository to clone Envoy from"
+    required: false
+    default: "envoyproxy/envoy"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.version }}
+        path: out/envoy-build
+
+    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+      with:
+        disk-cache: ${{ inputs.version }}-wip1
+        repository-cache: true
+
+    - name: Apply patches
+      shell: bash
+      run: |
+        cp envoy_windows_fixes.patch out/envoy-build/
+        cd out/envoy-build
+        git apply envoy_windows_fixes.patch
+
+    - name: build envoy
+      working-directory: out/envoy-build
+      shell: pwsh
+      run: |
+        # Bazel runs many commands in bash, which prepends the mingw tools to the beginning of the path.
+        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. Bazel does prepends
+        # LLVM before this when running commands, so we can workaround this by symlinking in that folder
+        # to take priority.
+        New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+
+        # Run the build
+        bazel build -c opt `
+          --config=clang-cl `
+          --cxxopt=/std:c++20 `
+          --host_cxxopt=/std:c++20 `
+          --copt=-Wno-error=implicit-function-declaration `
+          --copt=-Wno-unknown-argument `
+          --copt=-Wno-nullability-completeness `
+          --cxxopt=/FIstring `
+          --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/filters/http/ext_proc/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/tracers/opentelemetry/samplers/cel/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
+          --repo_env=PATH `
+          --verbose_failures `
+          --curses=no `
+          envoy
+
+    # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
+    # with this is name the actual executable envoy.dll - Windows will run it as a binary
+    # just fine.
+    - run: cp out/envoy-build/bazel-bin/source/exe/envoy-static.exe envoy/_bin/envoy.dll
+      shell: pwsh

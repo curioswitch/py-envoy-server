@@ -10,7 +10,7 @@ permissions:
   attestations: write
 
 jobs:
-  build-linux:
+  build-unix:
     runs-on: ubuntu-24.04
     environment: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
     steps:
@@ -19,7 +19,31 @@ jobs:
       - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
 
       - name: Build wheels
-        run: uv run poe wheels
+        run: uv run poe unix-wheels
+
+      - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        with:
+          repository-url: ${{ github.event_name != 'push' && 'https://test.pypi.org/legacy/' || null }}
+          skip-existing: ${{ github.event_name != 'push' }}
+
+  build-windows:
+    runs-on: windows-2025
+    environment: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
+
+      - id: envoy-version
+        shell: bash
+        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
+
+      - uses: ./.github/actions/build-windows
+        with:
+          version: ${{ steps.envoy-version.outputs.version }}
+
+      - name: Build wheel
+        run: uv run poe build
 
       - uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:

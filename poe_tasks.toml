@@ -26,11 +26,15 @@ cmd = "ruff check ."
 help = "Lints code"
 sequence = ["lint-python"]
 
+[tasks.print-envoy-version]
+help = "Prints the targeted Envoy version"
+script = "scripts.build:print_envoy_version"
+
 [tasks.test]
 help = "Runs tests"
 deps = ["build"]
 cmd = "pytest"
 
-[tasks.wheels]
-help = "Builds the wheels"
-script = "scripts.build:wheels"
+[tasks.unix-wheels]
+help = "Builds the wheels for Linux and macOS"
+script = "scripts.build:unix_wheels"

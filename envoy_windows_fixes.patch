@@ -1,0 +1,814 @@
+diff --git a/bazel/BUILD b/bazel/BUILD
+index 17b80cd744..3d4c04ad0c 100644
+--- a/bazel/BUILD
++++ b/bazel/BUILD
+@@ -1,12 +1,13 @@
+ load("@bazel_skylib//lib:selects.bzl", "selects")
+ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+ load("@envoy_api//bazel:repository_locations.bzl", API_REPOSITORY_LOCATIONS_SPEC = "REPOSITORY_LOCATIONS_SPEC")
+ load("@envoy_api//bazel:repository_locations_utils.bzl", "load_repository_locations_spec", "merge_dicts")
+ load("@envoy_toolshed//:macros.bzl", "json_data")
+ load("@envoy_toolshed//dependency:macros.bzl", "updater")
+ load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_shell//shell:sh_library.bzl", "sh_library")
+ load("//bazel:envoy_build_system.bzl", "envoy_package")
+-load("//bazel:envoy_internal.bzl", "envoy_select_force_libcpp")
+ load(":repository_locations.bzl", "REPOSITORY_LOCATIONS_SPEC")
+ 
+ licenses(["notice"])  # Apache 2
+@@ -68,6 +69,15 @@ genrule(
+     stamp = 1,
+ )
+ 
++# For Windows, which must list each exported symbol individually.
++genrule(
++    name = "exported_symbols_windows",
++    srcs = ["@envoy//source/extensions/dynamic_modules:abi.h"],
++    outs = ["exported_symbols_windows.def"],
++    cmd = "$(location //tools:gen_dynamic_modules_windows_exports) $(location @envoy//source/extensions/dynamic_modules:abi.h) $@",
++    tools = ["//tools:gen_dynamic_modules_windows_exports"],
++)
++
+ cc_library(
+     name = "static_stdlib",
+     linkopts = select({
+diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
+index 866a00f280..07b7e39291 100644
+--- a/bazel/envoy_internal.bzl
++++ b/bazel/envoy_internal.bzl
+@@ -214,7 +214,10 @@ def envoy_exported_symbols_input():
+     return [
+         "@envoy//bazel:exported_symbols.txt",
+         "@envoy//bazel:exported_symbols_apple.txt",
+-    ]
++    ] + select({
++        "@envoy//bazel:windows_x86_64": ["//bazel:exported_symbols_windows.def"],
++        "//conditions:default": [],
++    })
+ 
+ # Default symbols to be exported.
+ def _envoy_default_exported_symbols():
+@@ -225,6 +228,9 @@ def _envoy_default_exported_symbols():
+         "@envoy//bazel:apple": [
+             "-Wl,-exported_symbols_list,$(location @envoy//bazel:exported_symbols_apple.txt)",
+         ],
++        "@envoy//bazel:windows_x86_64": [
++            "-DEF:$(location //bazel:exported_symbols_windows.def)",
++        ],
+         "//conditions:default": [],
+     })
+ 
+diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
+index dc07b536d3..6d64791c2b 100644
+--- a/bazel/foreign_cc/BUILD
++++ b/bazel/foreign_cc/BUILD
+@@ -500,6 +500,7 @@ envoy_cmake(
+         "CMAKE_C_COMPILER_FORCED": "on",
+         "SKIP_BUILD_EXAMPLES": "on",
+         "BUILD_SHARED_LIBS": "off",
++        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+ 
+         # The following entries are for zlib-ng. Since zlib and zlib-ng are compatible source
+         # codes and CMake ignores unknown cache entries, it is fine to combine it into one
+@@ -522,6 +523,9 @@ envoy_cmake(
+         # Reference: https://github.com/zlib-ng/zlib-ng#advanced-build-options.
+         "UNALIGNED_OK": "off",
+     },
++    debug_cache_entries = {
++        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDebug",
++    },
+     generate_args = [
+         "-G",
+         "Ninja",
+@@ -580,6 +584,28 @@ envoy_cmake(
+     working_directory = "build/cmake",
+ )
+ 
++configure_make(
++    name = "dlfcn_win32_build",
++    configure_in_place = True,
++    configure_options = [
++        "--disable-shared",
++        "--enable-static",
++    ],
++    lib_source = "@com_github_dlfcn_win32//:all",
++    out_static_libs = select({
++        "//bazel:windows_x86_64": ["libdl.a"],
++        "//conditions:default": [],
++    }),
++)
++
++cc_library(
++    name = "dlfcn_win32",
++    deps = select({
++        "//bazel:windows_x86_64": [":dlfcn_win32_build"],
++        "//conditions:default": [],
++    }),
++)
++
+ envoy_cmake(
+     name = "maxmind",
+     build_args = select({
+diff --git a/bazel/foreign_cc/luajit.patch b/bazel/foreign_cc/luajit.patch
+index ab525a950f..14ae99c9b0 100644
+--- a/bazel/foreign_cc/luajit.patch
++++ b/bazel/foreign_cc/luajit.patch
+@@ -56,7 +56,7 @@ new file mode 100755
+ index 00000000..1201542c
+ --- /dev/null
+ +++ b/build.py
+-@@ -0,0 +1,52 @@
++@@ -0,0 +1,59 @@
+ +#!/usr/bin/env python3
+ +
+ +import argparse
+@@ -95,6 +95,13 @@ index 00000000..1201542c
+ +    dst_dir = os.getcwd() + "/luajit"
+ +    shutil.copytree(src_dir, os.path.basename(src_dir))
+ +    os.chdir(os.path.basename(src_dir) + "/src")
+++    # Align link flags with Envoy
+++    with open("msvcbuild.bat", "r") as f:
+++        content = f.read()
+++    content = content.replace("/Zi", "/Z7")
+++    content = content.replace("/MD", "/MT")
+++    with open("msvcbuild.bat", "w") as f:
+++        f.write(content)
+ +    os.system('msvcbuild.bat ' + os.getenv('WINDOWS_DBG_BUILD', '') + ' static')
+ +    os.makedirs(dst_dir + "/lib", exist_ok=True)
+ +    shutil.copy("lua51.lib", dst_dir + "/lib")
+diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
+index 465f8f55a0..59282fc945 100644
+--- a/bazel/repositories.bzl
++++ b/bazel/repositories.bzl
+@@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
+     "envoy.filters.http.sxg",
+     "envoy.tracers.dynamic_ot",
+     "envoy.tracers.datadog",
++    # Only implemented for Linux.
++    "envoy.resource_monitors.cpu_utilization",
+     # Extensions that require CEL.
+     "envoy.access_loggers.extension_filters.cel",
+     "envoy.rate_limit_descriptors.expr",
+@@ -222,6 +224,7 @@ def envoy_dependencies(skip_targets = []):
+     external_http_archive("envoy_examples")
+     external_http_archive("envoy_toolshed")
+ 
++    _com_github_dlfcn_win32()
+     _com_github_maxmind_libmaxminddb()
+ 
+     external_http_archive("rules_license")
+@@ -1044,3 +1047,9 @@ def _com_github_maxmind_libmaxminddb():
+         name = "com_github_maxmind_libmaxminddb",
+         build_file_content = BUILD_ALL_CONTENT,
+     )
++
++def _com_github_dlfcn_win32():
++    external_http_archive(
++        name = "com_github_dlfcn_win32",
++        build_file_content = BUILD_ALL_CONTENT,
++    )
+diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
+index d7fa4fa884..1d693f90dc 100644
+--- a/bazel/repository_locations.bzl
++++ b/bazel/repository_locations.bzl
+@@ -1632,6 +1632,21 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+         license = "Apache-2.0",
+         license_url = "https://github.com/bazelbuild/rules_license/blob/{version}/LICENSE",
+     ),
++    com_github_dlfcn_win32 = dict(
++        project_name = "dlfcn-win32",
++        project_desc = "An implementation of dlfcn for Windows.",
++        project_url = "https://github.com/dlfcn-win32/dlfcn-win32",
++        version = "1.4.2",
++        sha256 = "f61a874bc9163ab488accb364fd681d109870c86e8071f4710cbcdcbaf9f2565",
++        strip_prefix = "dlfcn-win32-{version}",
++        urls = ["https://github.com/dlfcn-win32/dlfcn-win32/archive/refs/tags/v{version}.tar.gz"],
++        use_category = ["dataplane_ext"],
++        extensions = ["envoy.filters.http.dynamic_modules"],
++        release_date = "2025-03-05",
++        cpe = "N/A",
++        license = "MIT",
++        license_url = "https://github.com/dlfcn-win32/dlfcn-win32/blob/v{version}/COPYING",
++    ),
+     com_github_maxmind_libmaxminddb = dict(
+         project_name = "maxmind_libmaxminddb",
+         project_desc = "C library for reading MaxMind DB files",
+diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
+index 08f2227c4f..85f6c25af3 100644
+--- a/envoy/api/os_sys_calls.h
++++ b/envoy/api/os_sys_calls.h
+@@ -1,6 +1,9 @@
+ #pragma once
+ 
++#ifndef _WIN32
+ #include <sys/resource.h>
++
++#endif
+ #include <sys/stat.h>
+ 
+ #include <chrono>
+@@ -13,6 +16,14 @@
+ #include "envoy/common/pure.h"
+ #include "envoy/network/address.h"
+ 
++#ifdef _WIN32
++struct rlimit {
++  int rlim_cur;
++  int rlim_max;
++};
++#define RLIMIT_NOFILE 7
++#endif // _WIN32
++
+ namespace Envoy {
+ namespace Api {
+ 
+diff --git a/envoy/common/platform.h b/envoy/common/platform.h
+index 42075f881f..58a4c15ae8 100644
+--- a/envoy/common/platform.h
++++ b/envoy/common/platform.h
+@@ -69,11 +69,14 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
+ 
+ typedef unsigned int sa_family_t;
+ 
++#ifndef _STRUCT_IOVEC
+ // Posix structure for scatter/gather I/O, not present on Windows.
+ struct iovec {
+   void* iov_base;
+   size_t iov_len;
+ };
++#define _STRUCT_IOVEC
++#endif // _STRUCT_IOVEC
+ 
+ // Posix structure for describing messages sent by 'sendmsg` and received by
+ // 'recvmsg'
+diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
+index 7fda90aa08..dc32868f62 100644
+--- a/source/common/api/win32/os_sys_calls_impl.cc
++++ b/source/common/api/win32/os_sys_calls_impl.cc
+@@ -10,6 +10,14 @@
+ 
+ #define DWORD_MAX UINT32_MAX
+ 
++#ifndef SIO_SET_RECV_IP_ECN
++#define SIO_SET_RECV_IP_ECN _WSAIOW(IOC_VENDOR, 12)
++#endif
++
++#ifndef SIO_GET_RECV_IP_ECN
++#define SIO_GET_RECV_IP_ECN _WSAIOR(IOC_VENDOR, 13)
++#endif
++
+ namespace Envoy {
+ namespace Api {
+ namespace {
+@@ -245,7 +253,10 @@ SysCallIntResult OsSysCallsImpl::fstat(os_fd_t fd, struct stat* buf) {
+ SysCallIntResult OsSysCallsImpl::setsockopt(os_fd_t sockfd, int level, int optname,
+                                             const void* optval, socklen_t optlen) {
+   if (optname == IP_RECVTOS || optname == IPV6_RECVTCLASS) {
+-    const int rc = ::WSASetRecvIPEcn(sockfd, *(int*)optval == 1);
++    DWORD enabled = (*(int*)optval == 1) ? 1 : 0;
++    DWORD bytes_returned;
++    const int rc = ::WSAIoctl(sockfd, SIO_SET_RECV_IP_ECN, &enabled, sizeof(enabled), nullptr, 0,
++                              &bytes_returned, nullptr, nullptr);
+     return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
+   }
+   const int rc = ::setsockopt(sockfd, level, optname, static_cast<const char*>(optval), optlen);
+@@ -255,7 +266,9 @@ SysCallIntResult OsSysCallsImpl::setsockopt(os_fd_t sockfd, int level, int optna
+ SysCallIntResult OsSysCallsImpl::getsockopt(os_fd_t sockfd, int level, int optname, void* optval,
+                                             socklen_t* optlen) {
+   if (optname == IP_RECVTOS || optname == IPV6_RECVTCLASS) {
+-    const int rc = ::WSAGetRecvIPEcn(sockfd, (DWORD*)optval);
++    DWORD bytes_returned;
++    const int rc = ::WSAIoctl(sockfd, SIO_GET_RECV_IP_ECN, nullptr, 0, optval, sizeof(DWORD),
++                              &bytes_returned, nullptr, nullptr);
+     return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
+   }
+   const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
+diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
+index c1beac6a52..c98902b2e3 100644
+--- a/source/common/common/win32/thread_impl.cc
++++ b/source/common/common/win32/thread_impl.cc
+@@ -22,9 +22,8 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
+         return 0;
+       },
+       this, 0, nullptr));
+-  if (options && options.thread_priority_ &&
+-      !SetThreadPriority(thread_handle_, *options.thread_priority_)) {
+-    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options.thread_priority_);
++  if (options && options->priority_ && !SetThreadPriority(thread_handle_, *options->priority_)) {
++    ENVOY_LOG_MISC(warn, "Could not set the thread priority to {}", *options->priority_);
+   }
+   RELEASE_ASSERT(thread_handle_ != 0, "");
+ }
+@@ -41,7 +40,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
+   return std::make_unique<ThreadImplWin32>(thread_routine, options);
+ }
+ 
+-ThreadId ThreadFactoryImplWin32::currentThreadId() {
++ThreadId ThreadFactoryImplWin32::currentThreadId() const {
+   // TODO(mhoran): test this in windows please.
+   return ThreadId(static_cast<int64_t>(::GetCurrentThreadId()));
+ }
+diff --git a/source/common/common/win32/thread_impl.h b/source/common/common/win32/thread_impl.h
+index 87be085291..d40a6b0c6b 100644
+--- a/source/common/common/win32/thread_impl.h
++++ b/source/common/common/win32/thread_impl.h
+@@ -37,7 +37,7 @@ class ThreadFactoryImplWin32 : public ThreadFactory {
+ public:
+   // Thread::ThreadFactory
+   ThreadPtr createThread(std::function<void()> thread_routine, OptionsOptConstRef options) override;
+-  ThreadId currentThreadId() override;
++  ThreadId currentThreadId() const override;
+ };
+ 
+ } // namespace Thread
+diff --git a/source/common/event/win32/signal_impl.cc b/source/common/event/win32/signal_impl.cc
+index 0466ee6b73..8cdc1b2510 100644
+--- a/source/common/event/win32/signal_impl.cc
++++ b/source/common/event/win32/signal_impl.cc
+@@ -32,9 +32,10 @@ SignalEventImpl::SignalEventImpl(DispatcherImpl& dispatcher, signal_t signal_num
+ 
+   read_handle_->initializeFileEvent(
+       dispatcher,
+-      [this](uint32_t events) -> void {
++      [this](uint32_t events) -> absl::Status {
+         ASSERT(events == Event::FileReadyType::Read);
+         cb_();
++        return absl::OkStatus();
+       },
+       Event::FileTriggerType::Level, Event::FileReadyType::Read);
+   eventBridgeHandlersSingleton::get()[signal_num] = write_handle;
+diff --git a/source/common/filesystem/win32/watcher_impl.cc b/source/common/filesystem/win32/watcher_impl.cc
+index 58905d996d..833d657ac2 100644
+--- a/source/common/filesystem/win32/watcher_impl.cc
++++ b/source/common/filesystem/win32/watcher_impl.cc
+@@ -22,9 +22,10 @@ WatcherImpl::WatcherImpl(Event::Dispatcher& dispatcher, Filesystem::Instance& fi
+ 
+   read_handle_->initializeFileEvent(
+       dispatcher,
+-      [this](uint32_t events) -> void {
++      [this](uint32_t events) -> absl::Status {
+         ASSERT(events == Event::FileReadyType::Read);
+         onDirectoryEvent();
++        return absl::OkStatus();
+       },
+       Event::FileTriggerType::Level, Event::FileReadyType::Read);
+ 
+@@ -203,7 +204,7 @@ void WatcherImpl::directoryChangeCompletion(DWORD err, DWORD num_bytes, LPOVERLA
+       if (watch.file_ == file && (watch.events_ & events)) {
+         ENVOY_LOG(debug, "matched callback: file: {}", watcher->wstring_converter_.to_bytes(file));
+         const auto cb = watch.cb_;
+-        const auto cb_closure = [cb, events]() -> void { cb(events); };
++        const auto cb_closure = [cb, events]() -> void { (void)cb(events); };
+         watcher->active_callbacks_.push(cb_closure);
+         // write a byte to the other end of the socket that libevent is watching
+         // this tells the libevent callback to pull this callback off the active_callbacks_
+diff --git a/source/common/memory/aligned_allocator.h b/source/common/memory/aligned_allocator.h
+index f45e7f74b2..f715987527 100644
+--- a/source/common/memory/aligned_allocator.h
++++ b/source/common/memory/aligned_allocator.h
+@@ -45,6 +45,8 @@ public:
+       return nullptr;
+     }
+     return static_cast<T*>(ptr);
++#elif defined(_WIN32)
++    return static_cast<T*>(_aligned_malloc(bytes, Alignment));
+ #else
+     // Ensure bytes is a multiple of Alignment, which is required by std::aligned_alloc.
+     bytes = round_up_to_alignment(bytes);
+@@ -56,6 +58,8 @@ public:
+     if (p != nullptr) {
+ #ifdef ALIGNED_ALLOCATOR_USE_POSIX_MEMALIGN
+       free(p);
++#elif defined(_WIN32)
++      _aligned_free(p);
+ #else
+       std::free(p);
+ #endif
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
+index dcf868020f..4104956251 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
+@@ -1,8 +1,12 @@
+ #include "source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h"
+ 
++#ifndef _WIN32
+ #include <arpa/inet.h>
+ #include <netinet/in.h>
+ #include <sys/socket.h>
++#else
++#include <winsock2.h>
++#endif // _WIN32
+ 
+ #include <cstring>
+ #include <functional>
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
+index 7d0f78a501..a2254cc7e0 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
+@@ -1,8 +1,13 @@
+ #pragma once
+ 
++#ifndef _WIN32
+ #include <netinet/in.h>
+ #include <sys/socket.h>
+ 
++#else
++#include <winsock2.h>
++#endif // _WIN32
++
+ #include <functional>
+ 
+ #include "envoy/network/address.h"
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
+index b8b5c5fe69..cbdce5b1fb 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
+@@ -10,6 +10,7 @@
+ #include "envoy/network/connection.h"
+ #include "envoy/upstream/cluster_manager.h"
+ 
++#include "source/common/api/os_sys_calls_impl.h"
+ #include "source/common/buffer/buffer_impl.h"
+ #include "source/common/common/logger.h"
+ #include "source/common/event/real_time_system.h"
+@@ -54,13 +55,14 @@ void ReverseConnectionIOHandle::cleanup() {
+                  "ReverseConnectionIOHandle: cleaning up trigger pipe; "
+                  "trigger_pipe_write_fd_={}, trigger_pipe_read_fd_={}",
+                  trigger_pipe_write_fd_, trigger_pipe_read_fd_);
+-  if (trigger_pipe_write_fd_ >= 0) {
+-    ::close(trigger_pipe_write_fd_);
+-    trigger_pipe_write_fd_ = -1;
++  auto& os_sys_calls = Api::OsSysCallsSingleton::get();
++  if (trigger_pipe_write_fd_ != INVALID_SOCKET) {
++    os_sys_calls.close(trigger_pipe_write_fd_);
++    trigger_pipe_write_fd_ = INVALID_SOCKET;
+   }
+-  if (trigger_pipe_read_fd_ >= 0) {
+-    ::close(trigger_pipe_read_fd_);
+-    trigger_pipe_read_fd_ = -1;
++  if (trigger_pipe_read_fd_ != INVALID_SOCKET) {
++    os_sys_calls.close(trigger_pipe_read_fd_);
++    trigger_pipe_read_fd_ = INVALID_SOCKET;
+   }
+ 
+   // Cancel the retry timer safely.
+@@ -162,8 +164,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
+ 
+   // CRITICAL: Replace the monitored FD with pipe read FD
+   // This must happen before any event registration.
+-  int trigger_fd = getPipeMonitorFd();
+-  if (trigger_fd != -1) {
++  os_fd_t trigger_fd = getPipeMonitorFd();
++  if (trigger_fd != INVALID_SOCKET) {
+     ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
+     fd_ = trigger_fd;
+   }
+@@ -190,7 +192,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+   ENVOY_LOG(debug, "ReverseConnectionIOHandle: accept() called");
+   if (isTriggerPipeReady()) {
+     char trigger_byte;
+-    ssize_t bytes_read = ::read(trigger_pipe_read_fd_, &trigger_byte, 1);
++    auto& os_sys_calls = Api::OsSysCallsSingleton::get();
++    ssize_t bytes_read =
++        os_sys_calls.recv(trigger_pipe_read_fd_, &trigger_byte, 1, 0).return_value_;
+     if (bytes_read == 1) {
+       ENVOY_LOG(debug, "ReverseConnectionIOHandle: received trigger, processing connection.");
+       // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
+@@ -365,7 +369,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+   ENVOY_LOG(trace, "ReverseConnectionIOHandle: event: {}", static_cast<int>(event));
+ }
+ 
+-int ReverseConnectionIOHandle::getPipeMonitorFd() const { return trigger_pipe_read_fd_; }
++os_fd_t ReverseConnectionIOHandle::getPipeMonitorFd() const { return trigger_pipe_read_fd_; }
+ 
+ // Get time source for consistent time operations.
+ TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
+@@ -1034,30 +1038,33 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+ // Trigger pipe used to wake up accept() when a connection is established.
+ void ReverseConnectionIOHandle::createTriggerPipe() {
+   ENVOY_LOG(debug, "ReverseConnectionIOHandle: Creating trigger pipe for single-byte mechanism");
+-  int pipe_fds[2];
+-  if (pipe(pipe_fds) == -1) {
+-    ENVOY_LOG(error, "Failed to create trigger pipe: {}", errorDetails(errno));
+-    trigger_pipe_read_fd_ = -1;
+-    trigger_pipe_write_fd_ = -1;
++  os_fd_t pipe_fds[2];
++  auto& os_sys_calls = Api::OsSysCallsSingleton::get();
++#ifdef _WIN32
++  // On Windows, we use AF_INET to emulate a pipe with a TCP socket pair.
++  const int domain = AF_INET;
++#else
++  const int domain = AF_UNIX;
++#endif // _WIN32
++  auto result = os_sys_calls.socketpair(domain, SOCK_STREAM, 0, pipe_fds);
++  if (result.return_value_ != 0) {
++    ENVOY_LOG(error, "Failed to create trigger pipe: {}", errorDetails(result.errno_));
++    trigger_pipe_read_fd_ = INVALID_SOCKET;
++    trigger_pipe_write_fd_ = INVALID_SOCKET;
+     return;
+   }
+   trigger_pipe_read_fd_ = pipe_fds[0];
+   trigger_pipe_write_fd_ = pipe_fds[1];
+   // Make both ends non-blocking.
+-  int flags = fcntl(trigger_pipe_write_fd_, F_GETFL, 0);
+-  if (flags != -1) {
+-    fcntl(trigger_pipe_write_fd_, F_SETFL, flags | O_NONBLOCK);
+-  }
+-  flags = fcntl(trigger_pipe_read_fd_, F_GETFL, 0);
+-  if (flags != -1) {
+-    fcntl(trigger_pipe_read_fd_, F_SETFL, flags | O_NONBLOCK);
+-  }
++  os_sys_calls.setsocketblocking(trigger_pipe_write_fd_, false);
++  os_sys_calls.setsocketblocking(trigger_pipe_read_fd_, false);
++
+   ENVOY_LOG(debug, "ReverseConnectionIOHandle: Created trigger pipe: read_fd={}, write_fd={}",
+             trigger_pipe_read_fd_, trigger_pipe_write_fd_);
+ }
+ 
+ bool ReverseConnectionIOHandle::isTriggerPipeReady() const {
+-  return trigger_pipe_read_fd_ != -1 && trigger_pipe_write_fd_ != -1;
++  return trigger_pipe_read_fd_ != INVALID_SOCKET && trigger_pipe_write_fd_ != INVALID_SOCKET;
+ }
+ 
+ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
+@@ -1191,15 +1198,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
+       // Trigger accept mechanism safely.
+       if (isTriggerPipeReady()) {
+         char trigger_byte = 1;
+-        ssize_t bytes_written = ::write(trigger_pipe_write_fd_, &trigger_byte, 1);
+-        if (bytes_written == 1) {
++        auto& os_sys_calls = Api::OsSysCallsSingleton::get();
++        auto result = os_sys_calls.send(trigger_pipe_write_fd_, &trigger_byte, 1, 0);
++        if (result.return_value_ == 1) {
+           ENVOY_LOG(info,
+                     "ReverseConnectionIOHandle: Successfully triggered reverse_conn_listener "
+                     "accept() for host {}",
+                     host_address);
+         } else {
+           ENVOY_LOG(error, "ReverseConnectionIOHandle: Failed to write trigger byte: {}",
+-                    errorDetails(errno));
++                    errorDetails(result.errno_));
+         }
+       }
+     }
+diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
+index 48adcd3de5..b87dd85836 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
++++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
+@@ -205,7 +205,7 @@ public:
+    * Get the file descriptor for the pipe monitor used to wake up accept().
+    * @return the file descriptor for the pipe monitor
+    */
+-  int getPipeMonitorFd() const;
++  os_fd_t getPipeMonitorFd() const;
+ 
+   // Callbacks from RCConnectionWrapper.
+   /**
+@@ -406,8 +406,8 @@ private:
+ 
+   // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
+   // Inlined directly for simplicity and reduced test coverage requirements.
+-  int trigger_pipe_read_fd_{-1};
+-  int trigger_pipe_write_fd_{-1};
++  os_fd_t trigger_pipe_read_fd_{INVALID_SOCKET};
++  os_fd_t trigger_pipe_write_fd_{INVALID_SOCKET};
+ 
+   // Connection management : We store the established connections in a queue
+   // and pop the last established connection when data is read on trigger_pipe_read_fd_
+@@ -422,7 +422,7 @@ private:
+   Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
+ 
+   // Store original socket FD for cleanup.
+-  os_fd_t original_socket_fd_{-1};
++  os_fd_t original_socket_fd_{static_cast<os_fd_t>(-1)};
+ };
+ 
+ } // namespace ReverseConnection
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
+index b543752543..fdb98e0624 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
+ 
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
+index 2f16d81f8c..15ab6d45ce 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
+ 
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
+index 54654c0be0..7cfbcb9489 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
+@@ -210,7 +210,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+     if (fd == itr->get()->ioHandle().fdDoNotUse()) {
+       ENVOY_LOG(debug, "UpstreamSocketManager: marking socket dead. node: {} cluster: {} fd: {}.",
+                 node_id, cluster_id, fd);
++#ifndef _WIN32
+       ::shutdown(fd, SHUT_RDWR);
++#else
++      ::shutdown(fd, SD_BOTH);
++#endif // _WIN32
+       itr = sockets.erase(itr);
+       socket_found = true;
+ 
+diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
+index 05e34f7933..d333caff75 100644
+--- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
++++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
+@@ -1,7 +1,5 @@
+ #pragma once
+ 
+-#include <unistd.h>
+-
+ #include <atomic>
+ #include <cstdint>
+ #include <list>
+diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
+index 3241cab9ad..e05d11fca2 100644
+--- a/source/extensions/clusters/reverse_connection/reverse_connection.h
++++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
+@@ -1,8 +1,13 @@
+ #pragma once
+ 
++#ifndef _WIN32
+ #include <netinet/in.h>
+ #include <sys/socket.h>
+ 
++#else
++#include <winsock2.h>
++#endif // _WIN32
++
+ #include <cstdint>
+ #include <cstring>
+ #include <functional>
+diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
+index 30efe81fc3..f71a587f67 100644
+--- a/source/extensions/common/aws/BUILD
++++ b/source/extensions/common/aws/BUILD
+@@ -77,6 +77,7 @@ envoy_cc_library(
+     ],
+     deps = [
+         "//envoy/common:pure_lib",
++        "//envoy/common:time_interface",
+         "//source/common/common:cleanup_lib",
+         "//source/common/common:lock_guard_lib",
+         "//source/common/common:thread_lib",
+diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
+index dc0b799a35..ff35ea3d12 100644
+--- a/source/extensions/dynamic_modules/BUILD
++++ b/source/extensions/dynamic_modules/BUILD
+@@ -18,7 +18,10 @@ envoy_cc_library(
+     deps = [
+         ":abi_version_lib",
+         "//envoy/common:exception_lib",
+-    ],
++    ] + select({
++        "//bazel:windows_x86_64": ["//bazel/foreign_cc:dlfcn_win32"],
++        "//conditions:default": [],
++    }),
+ )
+ 
+ envoy_cc_library(
+@@ -27,3 +30,5 @@ envoy_cc_library(
+         "abi_version.h",
+     ],
+ )
++
++exports_files(["abi.h"])
+diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
+index f07d6a23b1..dd178e0892 100644
+--- a/source/extensions/dynamic_modules/dynamic_modules.cc
++++ b/source/extensions/dynamic_modules/dynamic_modules.cc
+@@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+   // > This can be used to test if the object is already resident (dlopen() returns NULL if it
+   // > is not, or the object's handle if it is resident).
+   //
++  void* handle = nullptr;
++#ifndef _WIN32
+   // So we can use RTLD_NOLOAD to check if the module is already loaded to avoid the duplicate call
+-  // to the init function.
+-  void* handle = dlopen(object_file_absolute_path.c_str(), RTLD_NOLOAD | RTLD_LAZY);
++  // to the init function. Because Windows doesn't support RTLD_NOLOAD, modules that support it
++  // will need to have idempotent init functions.
++  handle = dlopen(object_file_absolute_path.string().c_str(), RTLD_NOLOAD | RTLD_LAZY);
+   if (handle != nullptr) {
+     // This means the module is already loaded, and the return value is the handle of the already
+     // loaded module. We don't need to call the init function again.
+     return std::make_unique<DynamicModule>(handle);
+   }
++#endif // _WIN32
+   // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
+   // dlopen results in Invalid argument.
+   int mode = RTLD_LAZY;
+@@ -40,13 +44,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+     // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
+     mode |= RTLD_LOCAL;
+   }
++#ifndef _WIN32
+   if (do_not_close) {
+     mode |= RTLD_NODELETE;
+   }
+-  handle = dlopen(object_file_absolute_path.c_str(), mode);
++#endif // _WIN32
++  handle = dlopen(object_file_absolute_path.string().c_str(), mode);
+   if (handle == nullptr) {
+     return absl::InvalidArgumentError(absl::StrCat(
+-        "Failed to load dynamic module: ", object_file_absolute_path.c_str(), " : ", dlerror()));
++        "Failed to load dynamic module: ", object_file_absolute_path.string(), " : ", dlerror()));
+   }
+ 
+   DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
+@@ -62,14 +68,14 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+   const char* abi_version = (*init_function.value())();
+   if (abi_version == nullptr) {
+     return absl::InvalidArgumentError(
+-        absl::StrCat("Failed to initialize dynamic module: ", object_file_absolute_path.c_str()));
++        absl::StrCat("Failed to initialize dynamic module: ", object_file_absolute_path.string()));
+   }
+   // Checks the kAbiVersion and the version of the dynamic module.
+   if (absl::string_view(abi_version) != absl::string_view(kAbiVersion)) {
+     return absl::InvalidArgumentError(
+         absl::StrCat("ABI version mismatch: got ", abi_version, ", but expected ", kAbiVersion));
+   }
+-  return dynamic_module;
++  return std::move(dynamic_module);
+ }
+ 
+ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view module_name,
+@@ -82,7 +88,11 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+                                                    " is not set"));
+   }
+   const std::filesystem::path file_path_absolute =
++#ifndef _WIN32
+       std::filesystem::absolute(fmt::format("{}/lib{}.so", module_search_path, module_name));
++#else
++      std::filesystem::absolute(fmt::format("{}/{}.dll", module_search_path, module_name));
++#endif // _WIN32
+   return newDynamicModule(file_path_absolute, do_not_close, load_globally);
+ }
+ 
+diff --git a/tools/BUILD b/tools/BUILD
+index 94892810c9..ab077485b7 100644
+--- a/tools/BUILD
++++ b/tools/BUILD
+@@ -10,6 +10,12 @@ exports_files([
+     "check_repositories.sh",
+ ])
+ 
++py_binary(
++    name = "gen_dynamic_modules_windows_exports",
++    srcs = ["gen_dynamic_modules_windows_exports.py"],
++    visibility = ["//visibility:public"],
++)
++
+ py_binary(
+     name = "stack_decode",
+     srcs = ["stack_decode.py"],
+diff --git a/tools/gen_dynamic_modules_windows_exports.py b/tools/gen_dynamic_modules_windows_exports.py
+new file mode 100644
+index 0000000000..30248f5e6c
+--- /dev/null
++++ b/tools/gen_dynamic_modules_windows_exports.py
+@@ -0,0 +1,28 @@
++import re
++import sys
++
++def main():
++    if len(sys.argv) != 3:
++        print("Usage: gen_dynamic_modules_def.py <input_header> <output_def>")
++        sys.exit(1)
++
++    input_header = sys.argv[1]
++    output_def = sys.argv[2]
++
++    with open(input_header, 'r') as f:
++        content = f.read()
++
++    # Find all function declarations starting with envoy_dynamic_module_callback_
++    # Example: void envoy_dynamic_module_callback_http_get_header(
++    matches = re.findall(r'\b(envoy_dynamic_module_callback_\w+)\(', content)
++
++    # Remove duplicates and sort
++    symbols = sorted(list(set(matches)))
++
++    with open(output_def, 'w') as f:
++        f.write("EXPORTS\n")
++        for symbol in symbols:
++            f.write(f"    {symbol}\n")
++
++if __name__ == "__main__":
++    main()

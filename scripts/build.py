@@ -16,7 +16,18 @@ MAC_OS_TARGET = "15_0"
 GLIBC_TARGET = "2_31"
 
 bin_dir = Path(__file__).parent.parent / "envoy" / "_bin"
-envoy_path = bin_dir / "envoy"
+if sys.platform != "win32":
+    envoy_path = bin_dir / "envoy"
+else:
+    envoy_path = bin_dir / "envoy.dll"
+
+
+def _get_envoy_version() -> str:
+    pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")
+    version = f"v{pyproject['project']['version']}"
+    if (post_idx := version.find(".post")) >= 0:
+        version = version[:post_idx]
+    return version
 
 
 def build(os: str | None = None, arch: str | None = None) -> None:
@@ -29,18 +40,9 @@ def build(os: str | None = None, arch: str | None = None) -> None:
                 arch = "arm64"
         os = sys.platform
 
-    if os not in ("linux", "darwin"):
-        # Just build to the venv, mostly for importlib.
-        # Tests will run with Docker.
-        subprocess.run(["uv", "build"], check=True)
-        return
-
     bin_dir.mkdir(parents=True, exist_ok=True)
 
-    pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")
-    version = f"v{pyproject['project']['version']}"
-    if (post_idx := version.find(".post")) >= 0:
-        version = version[:post_idx]
+    version = _get_envoy_version()
 
     match os:
         case "darwin":
@@ -51,22 +53,30 @@ def build(os: str | None = None, arch: str | None = None) -> None:
                     platform_tag = f"manylinux_{GLIBC_TARGET}_x86_64"
                 case "arm64":
                     platform_tag = f"manylinux_{GLIBC_TARGET}_aarch64"
+        case "win32":
+            platform_tag = "win_amd64"
 
-    url = f"https://github.com/tetratelabs/archive-envoy/releases/download/{version}/envoy-{version}-{os}-{arch}.tar.xz"
+    if os != "win32":
+        url = f"https://github.com/tetratelabs/archive-envoy/releases/download/{version}/envoy-{version}-{os}-{arch}.tar.xz"
 
-    envoy_path.unlink(missing_ok=True)
+        envoy_path.unlink(missing_ok=True)
 
-    with urllib.request.urlopen(url) as response:  # noqa: S310
-        archive_bytes = response.read()
+        with urllib.request.urlopen(url) as response:  # noqa: S310
+            archive_bytes = response.read()
 
-    with tarfile.open(fileobj=BytesIO(archive_bytes), mode="r:xz") as archive:
-        envoy_file = archive.extractfile(f"envoy-{version}-{os}-{arch}/bin/envoy")
-        if envoy_file is None:
-            msg = "envoy binary not found in the archive"
+        with tarfile.open(fileobj=BytesIO(archive_bytes), mode="r:xz") as archive:
+            envoy_file = archive.extractfile(f"envoy-{version}-{os}-{arch}/bin/envoy")
+            if envoy_file is None:
+                msg = "envoy binary not found in the archive"
+                raise RuntimeError(msg)
+            with envoy_path.open("wb") as f:
+                copyfileobj(envoy_file, f)
+        envoy_path.chmod(0o755)
+    else:
+        # We assume Envoy was built separately on CI.
+        if not envoy_path.exists():
+            msg = f"Envoy binary not found at expected path: {envoy_path}"
             raise RuntimeError(msg)
-        with envoy_path.open("wb") as f:
-            copyfileobj(envoy_file, f)
-    envoy_path.chmod(0o755)
 
     subprocess.run(["uv", "build", "--wheel"], check=True)
 
@@ -88,7 +98,7 @@ def build(os: str | None = None, arch: str | None = None) -> None:
     )
 
 
-def wheels() -> None:
+def unix_wheels() -> None:
     rmtree("dist", ignore_errors=True)
     for os in ("linux", "darwin"):
         for arch in ("amd64", "arm64"):
@@ -100,3 +110,7 @@ def wheels() -> None:
     # because we leave them with the default platform tag.
     envoy_path.unlink(missing_ok=True)
     subprocess.run(["uv", "build"], check=True)
+
+
+def print_envoy_version() -> None:
+    print(_get_envoy_version(), end="")
