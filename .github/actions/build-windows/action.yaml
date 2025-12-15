@@ -36,6 +36,9 @@ runs:
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
 
+    - name: Workaround environment issues
+      shell: bash
+      run: |
         echo $PATH
         ln -s "/c/Program Files/LLVM/bin/lld-link.exe" /usr/local/bin/link.exe
         which bash.exe
