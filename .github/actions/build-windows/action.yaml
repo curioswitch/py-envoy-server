@@ -57,7 +57,7 @@ runs:
           --features=static_link_msvcrt `
           --dynamic_mode=off `
           --define signal_trace=disabled `
-          --define=hot_restart=disabled `
+          --define hot_restart=disabled `
           --define tcmalloc=disabled `
           --define wasm=disabled `
           --define manual_stamp=manual_stamp `
@@ -66,6 +66,7 @@ runs:
           --copt=-Wno-error=implicit-function-declaration `
           --copt=-Wno-unknown-argument `
           --copt=-Wno-nullability-completeness `
+          --copt=-Wno-unused-command-line-argument `
           --cxxopt=/FIstring `
           --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
           --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
