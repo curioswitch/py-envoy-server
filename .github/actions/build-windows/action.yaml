@@ -48,12 +48,10 @@ runs:
 
         # Run the build
         bazel build -c opt --keep_going `
-          --extra_toolchains=@local_config_cc//platforms:cc-toolchain-x64_windows-clang-cl `
-          --extra_execution_platforms=//platforms:x64_windows-clang-cl `
-          --action_env=PATH --host_action_env=PATH `
+          --extra_toolchains=@local_config_cc//bazel/platforms:cc-toolchain-x64_windows-clang-cl `
+          --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
-          --repo_env=PATH `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
           --copt=-Wno-error=implicit-function-declaration `
