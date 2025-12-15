@@ -39,8 +39,8 @@ runs:
     - name: Workaround environment issues
       shell: bash
       run: |
-        echo $PATH
-        ln -s "/c/Program Files/LLVM/bin/lld-link.exe" /usr/local/bin/link.exe
+        env
+        ln -s "/c/Program Files/LLVM/bin/lld-link.exe" /mingw/bin/link.exe
         which bash.exe
         which -a link.exe
 
