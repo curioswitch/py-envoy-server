@@ -1,0 +1,40 @@
+name: Build upstream Envoy on Windows
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Cancel in-progress jobs for PRs only
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - uses: astral-sh/setup-uv@ed21f2f24f8dd64503750218de024bcf64c7250a # v7.1.5
+
+      - run: uv lock --check
+
+      - run: uv sync
+
+      - id: envoy-version
+        shell: bash
+        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
+
+      - uses: ./.github/actions/build-windows
+        with:
+          version: fix-windows-build
+          repository: anuraaga/envoy
+
+      - name: run tests
+        run: uv run poe test
+
+      - run: uv run poe build

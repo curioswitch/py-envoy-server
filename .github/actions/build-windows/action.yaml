@@ -42,7 +42,7 @@ runs:
         New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
         # Run the build
-        bazel build -c opt `
+        bazel build -c opt --keep_going `
           --config=clang-cl `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
