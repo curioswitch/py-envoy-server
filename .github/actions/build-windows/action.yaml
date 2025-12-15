@@ -36,6 +36,11 @@ runs:
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
 
+        echo $PATH
+        ln -s "/c/Program Files/LLVM/bin/lld-link.exe" /usr/local/bin/link.exe
+        which bash.exe
+        which -a link.exe
+
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
