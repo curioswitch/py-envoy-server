@@ -9,6 +9,10 @@ inputs:
     description: "GitHub repository to clone Envoy from"
     required: false
     default: "envoyproxy/envoy"
+  patch:
+    description: "Whether to apply patches"
+    required: false
+    default: "true"
 
 runs:
   using: composite
@@ -26,6 +30,7 @@ runs:
 
     - name: Apply patches
       shell: bash
+      if: ${{ inputs.patch == 'true' }}
       run: |
         cp envoy_windows_fixes.patch out/envoy-build/
         cd out/envoy-build
