@@ -50,7 +50,9 @@ runs:
         bazel build -c opt --keep_going `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//:x64_windows-clang-cl `
-          --action_env=PATH `
+          --action_env=PATH --host_action_env=PATH `
+          --action_env=TMPDIR `
+          --enable_runfiles=yes `
           --repo_env=PATH `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
