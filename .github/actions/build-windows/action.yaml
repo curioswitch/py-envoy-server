@@ -23,10 +23,10 @@ runs:
         ref: ${{ inputs.version }}
         path: out/envoy-build
 
-    #- uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
-    #  with:
-    #    disk-cache: ${{ inputs.version }}
-    #    repository-cache: true
+    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+      with:
+        disk-cache: ${{ inputs.version }}
+        repository-cache: true
 
     - name: Apply patches
       shell: bash
@@ -50,6 +50,7 @@ runs:
         bazel build -c opt `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
+          --action_env=PATH `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
           --features=compiler_param_file `
