@@ -23,10 +23,6 @@ jobs:
 
       - run: uv sync
 
-      - id: envoy-version
-        shell: bash
-        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
-
       - uses: ./.github/actions/build-windows
         with:
           version: fix-windows-build

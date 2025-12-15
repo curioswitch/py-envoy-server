@@ -48,7 +48,6 @@ runs:
 
         # Run the build
         bazel build -c opt --keep_going `
-          --config=clang-cl `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
           --copt=-Wno-error=implicit-function-declaration `
