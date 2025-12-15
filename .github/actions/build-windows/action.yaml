@@ -48,6 +48,8 @@ runs:
         Remove-Item "C:\Program Files\Git\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\Program Files\Git\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
+        ls C:\msys64\usr\bin\bash.exe
+
         # Run the build
         bazel build -c opt `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
