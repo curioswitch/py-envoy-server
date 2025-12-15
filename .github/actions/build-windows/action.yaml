@@ -51,6 +51,7 @@ runs:
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
+          --action_env=USE_CLANG_CL=1 `
           --repo_env=PATH `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
