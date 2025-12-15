@@ -67,6 +67,8 @@ runs:
           --copt=-Wno-unknown-argument `
           --copt=-Wno-nullability-completeness `
           --copt=-Wno-unused-command-line-argument `
+          --copt=-Wno-macro-redefined `
+          --copt=-Wno-builtin-macro-redefined `
           --cxxopt=/FIstring `
           --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
           --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
