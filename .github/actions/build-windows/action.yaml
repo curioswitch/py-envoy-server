@@ -40,11 +40,10 @@ runs:
       working-directory: out/envoy-build
       shell: pwsh
       run: |
-        # Bazel runs many commands in bash, which prepends the mingw tools to the beginning of the path.
-        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. Bazel does prepends
-        # LLVM before this when running commands, so we can workaround this by symlinking in that folder
-        # to take priority.
-        New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+        # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
+        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. /bin happens to
+        # be before /usr/bin, so to force LLVM link.exe, we create a symlink to it.
+        New-Item -Path "C:\Program Files\Git\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
         # Run the build
         bazel build -c opt `
