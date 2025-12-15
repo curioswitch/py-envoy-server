@@ -50,6 +50,7 @@ runs:
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
+          --repo_env=BAZEL_LLVM="C:\Program Files\LLVM" `
           --action_env=USE_CLANG_CL=1 `
           --repo_env=PATH `
           --noincompatible_strict_action_env `
