@@ -46,7 +46,7 @@ runs:
         Remove-Item "C:\Program Files\Git\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\Program Files\Git\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
-        & "C:\Program Files\Git\bin\bash.exe" -c "which -a sed"
+        Remove-Item  "C:\Program Files\Git\bin\bash.exe"
 
         # Run the build
         bazel build -c opt --sandbox_debug `
