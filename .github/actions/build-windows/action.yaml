@@ -41,19 +41,18 @@ runs:
       shell: pwsh
       run: |
         # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
-        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. /bin happens to
-        # be before /usr/bin, so to force LLVM link.exe, we create a symlink to it.
-
+        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. We replace it with
+        # a symlink to the correct one.
         Remove-Item "C:\Program Files\Git\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\Program Files\Git\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+
+        & "C:\Program Files\Git\bash.exe" -c "which -a sed"
 
         # Run the build
         bazel build -c opt `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
-          --repo_env=BAZEL_LLVM="C:\Program Files\LLVM" `
-          --action_env=USE_CLANG_CL=1 `
           --repo_env=PATH `
           --noincompatible_strict_action_env `
           --action_env=TMPDIR `
