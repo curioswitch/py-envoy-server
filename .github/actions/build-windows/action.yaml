@@ -49,7 +49,7 @@ runs:
         & "C:\Program Files\Git\bin\bash.exe" -c "which -a sed"
 
         # Run the build
-        bazel build -c opt `
+        bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
@@ -84,6 +84,13 @@ runs:
           --verbose_failures `
           --curses=no `
           envoy
+
+    - if: always()
+      shell: pwsh
+      working-directory: out/envoy-build
+      run: |
+        ls bazel-out/x64_windows-opt-exec-ST-a4acdbd19b2a/bin/external/rules_foreign_cc/toolchains/private/pkgconfig.build_tmpdir
+        cat bazel-out/x64_windows-opt-exec-ST-a4acdbd19b2a/bin/external/rules_foreign_cc/toolchains/private/pkgconfig.build_tmpdir/configure
 
     # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
     # with this is name the actual executable envoy.dll - Windows will run it as a binary
