@@ -35,7 +35,7 @@ runs:
         cp envoy_windows_fixes.patch out/envoy-build/
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
-        echo "C:\msys64\usr\bin\bash.exe -l %*" > /usr/bin/bazel_bash.bat
+        echo "C:\msys64\usr\bin\bash.exe -l %*" > /c/msys64/usr/bin/bazel_bash.bat
 
     - name: build envoy
       working-directory: out/envoy-build
