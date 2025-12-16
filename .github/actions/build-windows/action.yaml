@@ -35,14 +35,15 @@ runs:
         cp envoy_windows_fixes.patch out/envoy-build/
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
-        echo "C:\msys64\usr\bin\bash.exe -l %*" > /c/msys64/usr/bin/bazel_bash.bat
 
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
       env:
-        BAZEL_SH: C:\msys64\usr\bin\bazel_bash.bat
+        BAZEL_SH: C:\msys64\usr\bin\bash.exe
         MSYS2_PATH_TYPE: inherit
+        MSYSTEM: MSYS
+        PATH: C:\msys64\usr\bin;${{ env.PATH }}
       run: |
         # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
         # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. We replace it with
