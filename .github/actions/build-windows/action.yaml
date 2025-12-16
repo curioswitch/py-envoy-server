@@ -35,12 +35,13 @@ runs:
         cp envoy_windows_fixes.patch out/envoy-build/
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
+        echo "C:\msys64\usr\bin\bash.exe -l %*" > /usr/bin/bazel_bash.bat
 
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
       env:
-        BAZEL_SH: C:\msys64\usr\bin\bash.exe
+        BAZEL_SH: C:\msys64\usr\bin\bazel_bash.bat
         MSYS2_PATH_TYPE: inherit
       run: |
         # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
