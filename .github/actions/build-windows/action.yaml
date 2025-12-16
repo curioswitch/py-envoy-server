@@ -46,8 +46,6 @@ runs:
         Remove-Item "C:\Program Files\Git\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\Program Files\Git\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
-        Remove-Item  "C:\Program Files\Git\bin\bash.exe"
-
         # Run the build
         bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
