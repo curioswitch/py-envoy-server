@@ -39,6 +39,9 @@ runs:
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
+      env:
+        BAZEL_SH: C:\msys64\usr\bin\bash.exe
+        MSYS2_PATH_TYPE: inherit
       run: |
         # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
         # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. We replace it with
