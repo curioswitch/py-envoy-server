@@ -45,6 +45,7 @@ runs:
         # be before /usr/bin, so to force LLVM link.exe, we create a symlink to it.
 
         & "C:\Program Files\Git\bin\bash.exe" -c "which -a link.exe"
+        & "C:\Program Files\Git\bin\bash.exe" -c "pwd -w"
 
         Remove-Item "C:\Program Files\Git\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\Program Files\Git\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
