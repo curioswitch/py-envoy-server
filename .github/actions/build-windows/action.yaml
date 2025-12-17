@@ -36,11 +36,6 @@ runs:
         cd out/envoy-build
         git apply envoy_windows_fixes.patch
 
-    - name: setup path
-      shell: pwsh
-      run: |
-        [System.Environment]::SetEnvironmentVariable("Path", "C:\msys64\usr\bin;$env:Path", [System.EnvironmentVariableTarget]::Machine)
-
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
@@ -51,10 +46,11 @@ runs:
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
+        $env:Path="C:\msys64\usr\bin;$env:Path"
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
-        echo $env:PATH
+        bash.exe -c "which xargs"
 
         # Run the build
         bazel build -c opt --sandbox_debug `
