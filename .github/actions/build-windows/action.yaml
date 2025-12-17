@@ -61,8 +61,16 @@ runs:
 
         # Run the build
         bazel build -c opt --sandbox_debug `
-          --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
+          --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_autoconf_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_automake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_cmake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_m4_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_make_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_meson_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_ninja_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
           --action_env=TMPDIR `
           --action_env=PATH `
           --noincompatible_strict_action_env `
