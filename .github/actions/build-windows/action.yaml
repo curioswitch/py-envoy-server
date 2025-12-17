@@ -40,13 +40,18 @@ runs:
       working-directory: out/envoy-build
       shell: pwsh
       run: |
-        # Bazel runs many commands in bash, which prepends the unix tools to the beginning of the path.
-        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. We replace it with
-        # a symlink to the correct one.
+        # The Envoy build itself is well configured by the clang-cl toolchain, so how PATH is setup will
+        # generally not affect it. But all external dependencies are built using shell with tools like
+        # configure and make. Many expect a full shell environment to be available, and it seems the
+        # only way to ensure they see it is for us to prepend msys2 to the beginning of PATH.
+        $env:Path="C:\msys64\usr\bin;$env:Path"
+
+        # Because msys2 is first in path, it's link.exe will be used by some of those external dependencies.
+        # Since it's a GNU linker, it is incompatible with clang-cl, so we replace it with a symlink to
+        # the correct linker.
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
-        $env:Path="C:\msys64\usr\bin;$env:Path"
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
@@ -56,7 +61,6 @@ runs:
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
           --action_env=MSYS2_PATH_TYPE=inherit `
-          --noincompatible_strict_action_env `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
           --features=compiler_param_file `
