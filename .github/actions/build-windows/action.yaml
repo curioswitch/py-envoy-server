@@ -52,6 +52,10 @@ runs:
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
+        # After may attempts to get com_google_cel_cpp's xargs cat to have a valid PATH, we go ahead
+        # with the nuclear option.
+        New-Item -Path "C:\System32\cat.exe" -ItemType SymbolicLink -Value "C:\msys64\usr\bin\cat.exe"
+
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
@@ -91,13 +95,6 @@ runs:
           --verbose_failures `
           --curses=no `
           envoy
-
-    - if: always()
-      shell: pwsh
-      working-directory: out/envoy-build
-      run: |
-        ls bazel-out/x64_windows-opt-exec-ST-a4acdbd19b2a/bin/external/rules_foreign_cc/toolchains/private/pkgconfig.build_tmpdir
-        cat bazel-out/x64_windows-opt-exec-ST-a4acdbd19b2a/bin/external/rules_foreign_cc/toolchains/private/pkgconfig.build_tmpdir/configure
 
     # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
     # with this is name the actual executable envoy.dll - Windows will run it as a binary
