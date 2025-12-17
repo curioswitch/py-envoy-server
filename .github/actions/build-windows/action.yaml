@@ -54,7 +54,7 @@ runs:
 
         # After may attempts to get com_google_cel_cpp's xargs cat to have a valid PATH, we go ahead
         # with the nuclear option.
-        New-Item -Path "C:\System32\cat.exe" -ItemType SymbolicLink -Value "C:\msys64\usr\bin\cat.exe"
+        New-Item -Path "C:\Windows\System32\cat.exe" -ItemType SymbolicLink -Value "C:\msys64\usr\bin\cat.exe"
 
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
