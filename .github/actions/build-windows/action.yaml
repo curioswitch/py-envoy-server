@@ -49,7 +49,7 @@ runs:
         $env:Path="C:\msys64\usr\bin;$env:Path"
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
-        $env:BAZEL_LLVM_PATH="$env:BAZEL_LLVM\bin\clang.exe"
+        $env:BAZEL_LLVM_PATH="C:\Program Files\LLVM\bin\clang.exe"
 
         # Run the build
         bazel build -c opt --sandbox_debug `
