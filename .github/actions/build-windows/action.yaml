@@ -39,7 +39,7 @@ runs:
     - name: setup path
       shell: pwsh
       run: |
-        [System.Environment]::SetEnvironmentVariable("Path", "C:\msys64\usr\bin;$env:Path", [System.EnvironmentVariableTarget]::System)
+        [System.Environment]::SetEnvironmentVariable("Path", "C:\msys64\usr\bin;$env:Path", [System.EnvironmentVariableTarget]::Machine)
 
     - name: build envoy
       working-directory: out/envoy-build
