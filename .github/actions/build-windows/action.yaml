@@ -52,7 +52,7 @@ runs:
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
-        # After may attempts to get com_google_cel_cpp's xargs cat to have a valid PATH, we go ahead
+        # After may attempts to get com_google_cel_cpp's `xargs cat` to have a valid PATH, we go ahead
         # with the nuclear option.
         New-Item -Path "C:\Windows\System32\cat.exe" -ItemType SymbolicLink -Value "C:\msys64\usr\bin\cat.exe"
 
@@ -63,8 +63,6 @@ runs:
         bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
-          --action_env=PATH `
-          --action_env=MSYS2_PATH_TYPE=inherit `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
           --features=compiler_param_file `
