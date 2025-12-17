@@ -39,27 +39,24 @@ runs:
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
-      env:
-        MSYSTEM: MINGW64
-        MSYS2_PATH_TYPE: inherit
       run: |
-        # Bazel runs many commands in bash, which prepends the git tools to the beginning of the path.
+        # Bazel runs many commands in bash, which prepends the unix tools to the beginning of the path.
         # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. We replace it with
         # a symlink to the correct one.
-        Remove-Item "C:\Program Files\Git\usr\bin\link.exe" -ErrorAction Ignore
-        New-Item -Path "C:\Program Files\Git\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+        Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
+        New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
         $env:Path="C:\msys64\usr\bin;$env:Path"
-
-        ls "C:\msys64\usr\bin"
+        $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
+        $env:BAZEL_LLVM="C:\Program Files\LLVM"
+        $env:BAZEL_LLVM_PATH="$env:BAZEL_LLVM\bin\clang.exe"
 
         # Run the build
         bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
-          --action_env=MSYSTEM `
-          --action_env=MSYS2_PATH_TYPE `
+          --repo_env=PATH `
           --noincompatible_strict_action_env `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
