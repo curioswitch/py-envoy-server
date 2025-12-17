@@ -50,13 +50,12 @@ runs:
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
-        bash.exe -c "echo '/dev/null /dev/null' | xargs cat"
-
         # Run the build
         bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
           --action_env=PATH `
+          --action_env=MSYS2_PATH_TYPE=inherit `
           --noincompatible_strict_action_env `
           --action_env=TMPDIR `
           --enable_runfiles=yes `
