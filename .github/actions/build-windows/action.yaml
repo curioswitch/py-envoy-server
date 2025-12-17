@@ -50,7 +50,7 @@ runs:
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
-        bash.exe -c "which xargs"
+        bash.exe -c "cd / && pwd -W && which xargs"
 
         # Run the build
         bazel build -c opt --sandbox_debug `
