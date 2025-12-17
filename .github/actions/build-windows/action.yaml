@@ -54,6 +54,8 @@ runs:
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
+        echo $env:PATH
+
         # Run the build
         bazel build -c opt --sandbox_debug `
           --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
