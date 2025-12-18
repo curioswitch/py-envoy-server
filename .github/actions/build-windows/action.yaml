@@ -102,8 +102,17 @@ runs:
           --curses=no `
           envoy
 
+          ls -al bazel-bin/source/exe/envoy-static.exe
+
     # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
     # with this is name the actual executable envoy.dll - Windows will run it as a binary
     # just fine.
     - run: cp out/envoy-build/bazel-bin/source/exe/envoy-static.exe envoy/_bin/envoy.dll
       shell: pwsh
+
+    - name: debug envoy
+      working-directory: out/envoy-build
+      shell: bash
+      run: |
+        ldd bazel-bin/source/exe/envoy-static.exe
+        ./bazel-bin/source/exe/envoy-static.exe --version
