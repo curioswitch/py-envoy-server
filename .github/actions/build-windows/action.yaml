@@ -99,7 +99,7 @@ runs:
           --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
           --verbose_failures `
           --curses=no `
-          //source/exe:envoy-static
+          //source/exe:envoy-static --output=jsonproto
 
         # Run the build
         bazel build -c opt --keep_going `
