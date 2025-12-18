@@ -73,6 +73,7 @@ runs:
           --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
           --action_env=TMPDIR `
           --action_env=PATH `
+          --action_env=BAZEL_LINKOPTS= `
           --noincompatible_strict_action_env `
           --enable_runfiles=yes `
           --features=compiler_param_file `
