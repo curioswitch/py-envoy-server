@@ -52,10 +52,6 @@ runs:
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
-        # After may attempts to get com_google_cel_cpp's `xargs cat` to have a valid PATH, we go ahead
-        # with the nuclear option.
-        New-Item -Path "C:\Windows\System32\cat.exe" -ItemType SymbolicLink -Value "C:\msys64\usr\bin\cat.exe"
-
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
@@ -73,6 +69,7 @@ runs:
           --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
           --action_env=TMPDIR `
           --action_env=PATH `
+          --action_env=BAZEL_LINKLIBS= `
           --action_env=BAZEL_LINKOPTS= `
           --noincompatible_strict_action_env `
           --enable_runfiles=yes `
