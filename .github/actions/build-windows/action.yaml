@@ -54,6 +54,54 @@ runs:
 
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
+
+        bazel cquery -c opt --keep_going `
+          --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
+          --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_autoconf_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_automake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_cmake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_m4_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_make_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_meson_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_ninja_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
+          --action_env=TMPDIR `
+          --action_env=PATH `
+          --action_env=BAZEL_LINKLIBS= `
+          --action_env=BAZEL_LINKOPTS= `
+          --noincompatible_strict_action_env `
+          --enable_runfiles=yes `
+          --features=compiler_param_file `
+          --features=fully_static_link `
+          --features=static_link_msvcrt `
+          --dynamic_mode=off `
+          --define signal_trace=disabled `
+          --define hot_restart=disabled `
+          --define tcmalloc=disabled `
+          --define wasm=disabled `
+          --define manual_stamp=manual_stamp `
+          --cxxopt=/std:c++20 `
+          --host_cxxopt=/std:c++20 `
+          --copt=-Wno-error=implicit-function-declaration `
+          --copt=-Wno-unknown-argument `
+          --copt=-Wno-nullability-completeness `
+          --copt=-Wno-unused-command-line-argument `
+          --copt=-Wno-macro-redefined `
+          --copt=-Wno-builtin-macro-redefined `
+          --cxxopt=/FIstring `
+          --linkopt=/WX:NO `
+          --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/filters/http/ext_proc/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=source/extensions/tracers/opentelemetry/samplers/cel/.*@-Wno-nontrivial-memcall `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
+          --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
+          --verbose_failures `
+          --curses=no `
+          "deps(//source/exe:envoy-static)" --output=starlark --starlark:file=trace_linkopt.cquery
+
         # Run the build
         bazel build -c opt --keep_going `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
