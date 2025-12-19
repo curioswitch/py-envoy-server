@@ -23,10 +23,10 @@ runs:
         ref: ${{ inputs.version }}
         path: out/envoy-build
 
-    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
-      with:
-        disk-cache: ${{ inputs.version }}
-        repository-cache: true
+    #- uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+    #  with:
+    #    disk-cache: ${{ inputs.version }}
+    #    repository-cache: true
 
     - name: Apply patches
       shell: bash
@@ -67,11 +67,6 @@ runs:
           --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_meson_toolchain `
           --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_ninja_toolchain `
           --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
-          --action_env=TMPDIR `
-          --action_env=PATH `
-          --action_env=BAZEL_LINKLIBS= `
-          --action_env=BAZEL_LINKOPTS= `
-          --noincompatible_strict_action_env `
           --enable_runfiles=yes `
           --features=compiler_param_file `
           --features=fully_static_link `
