@@ -19,7 +19,7 @@ jobs:
 
       - uses: ./.github/actions/build-windows
         with:
-          version: fix-windows-build
+          version: fix-windows
           repository: anuraaga/envoy
           patch: "false"
 
