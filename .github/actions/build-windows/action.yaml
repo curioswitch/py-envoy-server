@@ -58,7 +58,7 @@ runs:
         echo "CAT"
         ls C:\msys64\usr\bin\cat.exe
         echo "DOG"
-        C:\msys64\usr\bin\bash.exe -c 'which cat'
+        C:\msys64\usr\bin\bash.exe -c 'env && which cat'
 
         # Run the build
         bazel build -c opt --keep_going `
