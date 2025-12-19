@@ -55,6 +55,10 @@ runs:
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
+        echo "CAT"
+        ls C:\msys64\usr\bin\cat.exe
+        echo "DOG"
+
         # Run the build
         bazel build -c opt --keep_going `
           --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
