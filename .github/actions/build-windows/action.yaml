@@ -23,10 +23,10 @@ runs:
         ref: ${{ inputs.version }}
         path: out/envoy-build
 
-    #- uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
-    #  with:
-    #    disk-cache: ${{ inputs.version }}
-    #    repository-cache: true
+    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+      with:
+        disk-cache: ${{ inputs.version }}
+        repository-cache: true
 
     - name: Apply patches
       shell: bash
@@ -52,11 +52,11 @@ runs:
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
+        # dlfcn looks for gcc so we go ahead and add it to the msys path
+        New-Item -Path "C:\msys64\usr\bin\gcc.exe" -ItemType SymbolicLink -Value "C:\mingw64\bin\gcc.exe"
+
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
-
-        Get-Command gcc.exe
-        ls C:\msys64\usr\bin\
 
         # Run the build
         bazel build -c opt --keep_going `
