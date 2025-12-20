@@ -53,7 +53,7 @@ runs:
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
 
         # dlfcn looks for gcc so we go ahead and add it to the msys path
-        New-Item -Path "C:\msys64\usr\bin\gcc.exe" -ItemType SymbolicLink -Value "C:\mingw64\bin\gcc.exe"
+        New-Item -Path "C:\msys64\usr\bin\gcc.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\clang-cl.exe"
 
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
