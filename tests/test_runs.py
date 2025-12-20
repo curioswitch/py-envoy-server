@@ -37,7 +37,8 @@ def test_runs():
                     "--log-level",
                     "error",
                 ],
-                text=True,
+                stdout=None,
+                stderr=None,
             )
 
         thread = threading.Thread(target=run_envoy, daemon=True)
