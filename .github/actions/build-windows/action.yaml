@@ -44,16 +44,13 @@ runs:
         # generally not affect it. But all external dependencies are built using shell with tools like
         # configure and make. Many expect a full shell environment to be available, and it seems the
         # only way to ensure they see it is for us to prepend msys2 to the beginning of PATH.
-        $env:Path="C:\msys64\usr\bin;$env:Path"
+        $env:Path="C:\msys64\usr\bin;C:\mingw64\bin;$env:Path"
 
         # Because msys2 is first in path, it's link.exe will be used by some of those external dependencies.
         # Since it's a GNU linker, it is incompatible with clang-cl, so we replace it with a symlink to
         # the correct linker.
         Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
         New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
-
-        # dlfcn looks for gcc so we go ahead and add it to the msys path
-        New-Item -Path "C:\msys64\usr\bin\gcc.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\clang-cl.exe"
 
         $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
         $env:BAZEL_LLVM="C:\Program Files\LLVM"
