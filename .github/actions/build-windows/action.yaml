@@ -19,7 +19,7 @@ runs:
         ref: ${{ inputs.version }}
         path: out/envoy-build
 
-    - uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+    - uses: bazel-contrib/setup-bazel@43d7d5ceab59a307da44fc7585faa2a2fff4f88d # 0.16.0
       with:
         disk-cache: ${{ inputs.version }}
         repository-cache: true
