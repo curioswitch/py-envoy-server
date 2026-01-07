@@ -21,7 +21,7 @@ jobs:
         with:
           version: fix-windows-build
           repository: anuraaga/envoy
-          patch: actions/build-windows/v1.37.patch
+          patch: .github/actions/build-windows/v1.37.patch
 
       - uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
         with:
