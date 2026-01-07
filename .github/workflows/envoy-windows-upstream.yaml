@@ -19,7 +19,7 @@ jobs:
 
       - uses: ./.github/actions/build-windows
         with:
-          version: fix-windows-build-luajit1
+          version: fix-windows-build
           repository: anuraaga/envoy
           patch: .github/actions/build-windows/v1.37.patch
 
