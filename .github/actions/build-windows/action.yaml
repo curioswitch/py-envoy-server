@@ -102,11 +102,6 @@ runs:
           --curses=no `
           envoy
 
-    - if: always()
-      shell: pwsh
-      run: |
-        ls D:\_bazel\execroot\envoy\bazel-out\x64_windows-opt\bin\bazel\foreign_cc\luajit.build_tmpdir\com_github_luajit_luajit\src
-
     # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
     # with this is name the actual executable envoy.dll - Windows will run it as a binary
     # just fine.
