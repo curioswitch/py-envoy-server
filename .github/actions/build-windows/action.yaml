@@ -10,9 +10,9 @@ inputs:
     required: false
     default: "envoyproxy/envoy"
   patch:
-    description: "Whether to apply patches"
+    description: "Patch file to apply before building"
     required: false
-    default: "true"
+    default: ""
 
 runs:
   using: composite
@@ -30,11 +30,11 @@ runs:
 
     - name: Apply patches
       shell: bash
-      if: ${{ inputs.patch == 'true' }}
+      if: ${{ inputs.patch != '' }}
       run: |
-        cp envoy_windows_fixes.patch out/envoy-build/
+        cp ${{ inputs.patch }} out/envoy-build/fixes.patch
         cd out/envoy-build
-        git apply envoy_windows_fixes.patch
+        git apply fixes.patch
 
     - name: build envoy
       working-directory: out/envoy-build
