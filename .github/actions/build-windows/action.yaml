@@ -9,6 +9,10 @@ inputs:
     description: "GitHub repository to clone Envoy from"
     required: false
     default: "envoyproxy/envoy"
+  patch:
+    description: "Patch file to apply before building"
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -26,29 +30,66 @@ runs:
 
     - name: Apply patches
       shell: bash
+      if: ${{ inputs.patch != '' }}
       run: |
-        cp envoy_windows_fixes.patch out/envoy-build/
+        cp ${{ inputs.patch }} out/envoy-build/fixes.patch
         cd out/envoy-build
-        git apply envoy_windows_fixes.patch
+        git apply fixes.patch
 
     - name: build envoy
       working-directory: out/envoy-build
       shell: pwsh
       run: |
-        # Bazel runs many commands in bash, which prepends the mingw tools to the beginning of the path.
-        # This includes a `link.exe` that is gnu, not the MSVC or LLVM one we need. Bazel does prepends
-        # LLVM before this when running commands, so we can workaround this by symlinking in that folder
-        # to take priority.
-        New-Item -Path "C:\Program Files\LLVM\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+        # The Envoy build itself is well configured by the clang-cl toolchain, so how PATH is setup will
+        # generally not affect it. But all external dependencies are built using shell with tools like
+        # configure and make. Many expect a full shell environment to be available, and it seems the
+        # only way to ensure they see it is for us to prepend msys2 to the beginning of PATH.
+        $env:Path="C:\msys64\usr\bin;$env:Path"
+
+        # Because msys2 is first in path, it's link.exe will be used by some of those external dependencies.
+        # Since it's a GNU linker, it is incompatible with clang-cl, so we replace it with a symlink to
+        # the correct linker.
+        Remove-Item "C:\msys64\usr\bin\link.exe" -ErrorAction Ignore
+        New-Item -Path "C:\msys64\usr\bin\link.exe" -ItemType SymbolicLink -Value "C:\Program Files\LLVM\bin\lld-link.exe"
+
+        $env:BAZEL_SH="C:\msys64\usr\bin\bash.exe"
+        $env:BAZEL_LLVM="C:\Program Files\LLVM"
 
         # Run the build
         bazel build -c opt --keep_going `
-          --config=clang-cl `
+          --extra_execution_platforms=//bazel/platforms:x64_windows-clang-cl `
+          --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_autoconf_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_automake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_cmake_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_m4_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_make_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_meson_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_ninja_toolchain `
+          --extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain `
+          --action_env=TMPDIR `
+          --action_env=PATH `
+          --action_env=BAZEL_LINKLIBS= `
+          --action_env=BAZEL_LINKOPTS= `
+          --noincompatible_strict_action_env `
+          --enable_runfiles=yes `
+          --features=compiler_param_file `
+          --features=fully_static_link `
+          --features=static_link_msvcrt `
+          --dynamic_mode=off `
+          --define signal_trace=disabled `
+          --define hot_restart=disabled `
+          --define tcmalloc=disabled `
+          --define wasm=disabled `
+          --define manual_stamp=manual_stamp `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
           --copt=-Wno-error=implicit-function-declaration `
           --copt=-Wno-unknown-argument `
           --copt=-Wno-nullability-completeness `
+          --copt=-Wno-unused-command-line-argument `
+          --copt=-Wno-macro-redefined `
+          --copt=-Wno-builtin-macro-redefined `
           --cxxopt=/FIstring `
           --per_file_copt=source/extensions/http/ext_proc/.*@-Wno-nontrivial-memcall `
           --per_file_copt=source/extensions/filters/common/expr/.*@-Wno-nontrivial-memcall `
@@ -57,7 +98,6 @@ runs:
           --per_file_copt=external/com_google_cel_cpp/.*@/DWIN32_LEAN_AND_MEAN `
           --per_file_copt=external/com_google_cel_cpp/.*@/DNOUSER `
           --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
-          --repo_env=PATH `
           --verbose_failures `
           --curses=no `
           envoy
@@ -67,3 +107,11 @@ runs:
     # just fine.
     - run: cp out/envoy-build/bazel-bin/source/exe/envoy-static.exe envoy/_bin/envoy.dll
       shell: pwsh
+
+    - name: debug envoy
+      working-directory: out/envoy-build
+      shell: bash
+      run: |
+        ls -al bazel-bin/source/exe/
+        ldd bazel-bin/source/exe/envoy-static.exe
+        ./bazel-bin/source/exe/envoy-static.exe --version

@@ -40,6 +40,7 @@ jobs:
       - uses: ./.github/actions/build-windows
         with:
           version: ${{ steps.envoy-version.outputs.version }}
+          patch: github/actions/build-windows/v1.37.patch
 
       - name: Build wheel
         run: uv run poe build
