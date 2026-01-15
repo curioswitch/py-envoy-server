@@ -885,7 +885,7 @@ index 6e0b0508f0..01ce680269 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index a22480f3c0..d0b30fa2b9 100644
+index a22480f3c0..381983a5ec 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
@@ -951,6 +951,15 @@ index a22480f3c0..d0b30fa2b9 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
+@@ -107,7 +119,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+ 
+   return absl::InvalidArgumentError(
+       absl::StrCat("Failed to load dynamic module: lib", module_name,
+-                   ".so not found in any search path: ", file_path_absolute.c_str(),
++                   ".so not found in any search path: ", file_path_absolute.string(),
+                    " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc."));
+ }
+ 
 diff --git a/source/server/BUILD b/source/server/BUILD
 index c0246b1758..df1af5bd0c 100644
 --- a/source/server/BUILD
