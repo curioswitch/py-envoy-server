@@ -25,7 +25,7 @@ runs:
 
     - uses: bazel-contrib/setup-bazel@083175551ceeceebc757ebee2127fde78840ca77 # 0.18.0
       with:
-        disk-cache: ${{ inputs.version }}
+        disk-cache: ${{ runner.name }}-${{ inputs.version }}
         repository-cache: true
 
     - name: Apply patches
