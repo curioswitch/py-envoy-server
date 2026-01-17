@@ -1,5 +1,7 @@
 name: Build upstream Envoy on Windows
 on:
+  schedule:
+    - cron: "5 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -12,9 +14,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on:
-      - windows-2025
-      - windows-11-arm
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
