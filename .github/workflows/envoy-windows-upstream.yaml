@@ -1,5 +1,7 @@
 name: Build upstream Envoy on Windows
 on:
+  schedule:
+    - cron: "5 4 * * *"
   workflow_dispatch:
 
 permissions:
