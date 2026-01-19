@@ -22,7 +22,7 @@ jobs:
         with:
           version: main
           repository: envoyproxy/envoy
-          patch: .github/actions/build-windows/v1.37.patch
+          patch: .github/actions/build-windows/main.patch
 
       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0
         with:
