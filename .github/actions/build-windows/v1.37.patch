@@ -96,7 +96,7 @@ index f8b9c93908..f1b38493e6 100644
      local_defines = [
          "XXH_NAMESPACE=ZSTD_",
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index d8fdb8980a..a384262842 100644
+index ddc876e95b..d74a1b6049 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index d604faa158..c3a388e5b8 100644
+index 8d67199043..aa8c27895b 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -347,7 +347,7 @@ index d604faa158..c3a388e5b8 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -217,6 +222,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -218,6 +223,7 @@ def envoy_dependencies(skip_targets = []):
      )
      external_http_archive("envoy_toolshed")
  
@@ -355,7 +355,7 @@ index d604faa158..c3a388e5b8 100644
      _com_github_maxmind_libmaxminddb()
      _thrift()
  
-@@ -810,7 +816,10 @@ def _com_github_luajit_luajit():
+@@ -807,7 +813,10 @@ def _com_github_luajit_luajit():
      external_http_archive(
          name = "com_github_luajit_luajit",
          build_file_content = BUILD_ALL_CONTENT,
@@ -367,7 +367,7 @@ index d604faa158..c3a388e5b8 100644
          patch_args = ["-p1"],
      )
  
-@@ -937,3 +946,9 @@ def _com_github_maxmind_libmaxminddb():
+@@ -934,3 +943,9 @@ def _com_github_maxmind_libmaxminddb():
          name = "com_github_maxmind_libmaxminddb",
          build_file_content = BUILD_ALL_CONTENT,
      )
@@ -378,10 +378,10 @@ index d604faa158..c3a388e5b8 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 883a290cb7..2fac8268d3 100644
+index dfa9556e7c..8c38e44f08 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -1668,6 +1668,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -1683,6 +1683,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          license = "Apache-2.0",
          license_url = "https://github.com/bazelbuild/rules_license/blob/{version}/LICENSE",
      ),
@@ -863,7 +863,7 @@ index c5cc8c0020..799ad67102 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index 52089b0bb6..50d523832a 100644
+index 6e0b0508f0..01ce680269 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -19,7 +19,10 @@ envoy_cc_library(
@@ -878,14 +878,14 @@ index 52089b0bb6..50d523832a 100644
  )
  
  envoy_cc_library(
-@@ -59,3 +62,5 @@ envoy_cc_library(
+@@ -57,3 +60,5 @@ envoy_cc_library(
          "abi_version.h",
      ],
  )
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index a5774fedf0..0af7684c5f 100644
+index a22480f3c0..381983a5ec 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
@@ -951,15 +951,15 @@ index a5774fedf0..0af7684c5f 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -108,7 +120,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -107,7 +119,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
 -                   ".so not found in any search path: ", file_path_absolute.c_str(),
 +                   ".so not found in any search path: ", file_path_absolute.string(),
-                    " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
-                    "to initialize: ",
-                    dynamic_module.status().message()));
+                    " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc."));
+ }
+ 
 diff --git a/source/server/BUILD b/source/server/BUILD
 index c0246b1758..df1af5bd0c 100644
 --- a/source/server/BUILD
