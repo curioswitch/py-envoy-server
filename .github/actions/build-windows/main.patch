@@ -897,6 +897,30 @@ index 52089b0bb6..50d523832a 100644
  )
 +
 +exports_files(["abi.h"])
+diff --git a/source/extensions/dynamic_modules/abi.h b/source/extensions/dynamic_modules/abi.h
+index a557e8dcfd..45c2f65a0f 100644
+--- a/source/extensions/dynamic_modules/abi.h
++++ b/source/extensions/dynamic_modules/abi.h
+@@ -3179,19 +3179,6 @@ void envoy_dynamic_module_callback_network_filter_config_scheduler_commit(
+     envoy_dynamic_module_type_network_filter_config_scheduler_module_ptr scheduler_module_ptr,
+     uint64_t event_id);
+ 
+-// --------------------- Network Filter Callbacks - Misc ---------------
+-
+-/**
+- * envoy_dynamic_module_callback_network_filter_get_worker_index is called by the module to get the
+- * worker index assigned to the current network filter. This can be used by the module to manage
+- * worker-specific resources or perform worker-specific logic.
+- * @param filter_envoy_ptr is the pointer to the DynamicModuleNetworkFilter object of the
+- * corresponding network filter.
+- * @return the worker index assigned to the current network filter.
+- */
+-uint32_t envoy_dynamic_module_callback_network_filter_get_worker_index(
+-    envoy_dynamic_module_type_network_filter_envoy_ptr filter_envoy_ptr);
+-
+ // =============================================================================
+ // ============================= Listener Filter ===============================
+ // =============================================================================
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index a5774fedf0..0af7684c5f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
@@ -973,6 +997,28 @@ index a5774fedf0..0af7684c5f 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
+diff --git a/source/extensions/dynamic_modules/sdk/rust/src/lib.rs b/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
+index e25f08108a..e35792e468 100644
+--- a/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
++++ b/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
+@@ -2449,7 +2449,7 @@ impl EnvoyHttpFilter for EnvoyHttpFilterImpl {
+   }
+ 
+   fn get_worker_index(&self) -> u32 {
+-    unsafe { abi::envoy_dynamic_module_callback_http_filter_get_worker_index(self.raw_ptr) }
++    0
+   }
+ 
+   fn set_socket_option_int(
+@@ -4725,7 +4725,7 @@ impl EnvoyNetworkFilter for EnvoyNetworkFilterImpl {
+   }
+ 
+   fn get_worker_index(&self) -> u32 {
+-    unsafe { abi::envoy_dynamic_module_callback_network_filter_get_worker_index(self.raw) }
++    0
+   }
+ }
+ 
 diff --git a/source/server/BUILD b/source/server/BUILD
 index c0246b1758..df1af5bd0c 100644
 --- a/source/server/BUILD
