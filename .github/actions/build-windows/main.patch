@@ -581,6 +581,19 @@ index f45e7f74b2..f715987527 100644
  #else
        std::free(p);
  #endif
+diff --git a/source/extensions/access_loggers/dynamic_modules/access_log.cc b/source/extensions/access_loggers/dynamic_modules/access_log.cc
+index 2f0cdbef8e..93d5bf5dff 100644
+--- a/source/extensions/access_loggers/dynamic_modules/access_log.cc
++++ b/source/extensions/access_loggers/dynamic_modules/access_log.cc
+@@ -29,7 +29,7 @@ DynamicModuleAccessLog::DynamicModuleAccessLog(AccessLog::FilterPtr&& filter,
+ 
+   tls_slot_->set([config](Event::Dispatcher& dispatcher) {
+     uint32_t worker_index;
+-    if (Envoy::Thread::MainThread::isMainThread() || Thread::TestThread::isTestThread()) {
++    if (Envoy::Thread::MainThread::isMainThread()) {
+       auto context = Server::Configuration::ServerFactoryContextInstance::getExisting();
+       auto concurrency = context->options().concurrency();
+       worker_index = concurrency; // Set main/test thread on free index.
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index dcf868020f..4104956251 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
