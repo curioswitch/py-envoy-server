@@ -1,8 +1,8 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 8a3d07e5a4..5c4c427771 100644
+index d006906f30..725bfdb8e9 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -68,6 +68,15 @@ genrule(
+@@ -70,6 +70,15 @@ genrule(
      stamp = 1,
  )
  
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index d604faa158..c3a388e5b8 100644
+index d48681be57..b9714c2693 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -378,12 +378,12 @@ index d604faa158..c3a388e5b8 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 883a290cb7..2fac8268d3 100644
+index 653ea9443f..3efcf071b7 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -1668,6 +1668,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
-         license = "Apache-2.0",
-         license_url = "https://github.com/bazelbuild/rules_license/blob/{version}/LICENSE",
+@@ -1116,6 +1116,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+         urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
+         release_date = "2024-09-05",
      ),
 +    com_github_dlfcn_win32 = dict(
 +        project_name = "dlfcn-win32",
@@ -582,15 +582,18 @@ index f45e7f74b2..f715987527 100644
        std::free(p);
  #endif
 diff --git a/source/extensions/access_loggers/dynamic_modules/access_log.cc b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-index 2f0cdbef8e..93d5bf5dff 100644
+index 6b47bc3e8b..ad2f007707 100644
 --- a/source/extensions/access_loggers/dynamic_modules/access_log.cc
 +++ b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-@@ -29,7 +29,7 @@ DynamicModuleAccessLog::DynamicModuleAccessLog(AccessLog::FilterPtr&& filter,
+@@ -29,7 +29,11 @@ DynamicModuleAccessLog::DynamicModuleAccessLog(AccessLog::FilterPtr&& filter,
  
    tls_slot_->set([config](Event::Dispatcher& dispatcher) {
      uint32_t worker_index;
--    if (Envoy::Thread::MainThread::isMainThread() || Thread::TestThread::isTestThread()) {
++#if TEST_THREAD_SUPPORTED
+     if (Envoy::Thread::MainThread::isMainOrTestThread()) {
++#else
 +    if (Envoy::Thread::MainThread::isMainThread()) {
++#endif
        auto context = Server::Configuration::ServerFactoryContextInstance::getExisting();
        auto concurrency = context->options().concurrency();
        worker_index = concurrency; // Set main/test thread on free index.
@@ -897,30 +900,6 @@ index 52089b0bb6..50d523832a 100644
  )
 +
 +exports_files(["abi.h"])
-diff --git a/source/extensions/dynamic_modules/abi.h b/source/extensions/dynamic_modules/abi.h
-index a557e8dcfd..45c2f65a0f 100644
---- a/source/extensions/dynamic_modules/abi.h
-+++ b/source/extensions/dynamic_modules/abi.h
-@@ -3179,19 +3179,6 @@ void envoy_dynamic_module_callback_network_filter_config_scheduler_commit(
-     envoy_dynamic_module_type_network_filter_config_scheduler_module_ptr scheduler_module_ptr,
-     uint64_t event_id);
- 
--// --------------------- Network Filter Callbacks - Misc ---------------
--
--/**
-- * envoy_dynamic_module_callback_network_filter_get_worker_index is called by the module to get the
-- * worker index assigned to the current network filter. This can be used by the module to manage
-- * worker-specific resources or perform worker-specific logic.
-- * @param filter_envoy_ptr is the pointer to the DynamicModuleNetworkFilter object of the
-- * corresponding network filter.
-- * @return the worker index assigned to the current network filter.
-- */
--uint32_t envoy_dynamic_module_callback_network_filter_get_worker_index(
--    envoy_dynamic_module_type_network_filter_envoy_ptr filter_envoy_ptr);
--
- // =============================================================================
- // ============================= Listener Filter ===============================
- // =============================================================================
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
 index a5774fedf0..0af7684c5f 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
@@ -997,28 +976,6 @@ index a5774fedf0..0af7684c5f 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
-diff --git a/source/extensions/dynamic_modules/sdk/rust/src/lib.rs b/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
-index e25f08108a..e35792e468 100644
---- a/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
-+++ b/source/extensions/dynamic_modules/sdk/rust/src/lib.rs
-@@ -2449,7 +2449,7 @@ impl EnvoyHttpFilter for EnvoyHttpFilterImpl {
-   }
- 
-   fn get_worker_index(&self) -> u32 {
--    unsafe { abi::envoy_dynamic_module_callback_http_filter_get_worker_index(self.raw_ptr) }
-+    0
-   }
- 
-   fn set_socket_option_int(
-@@ -4725,7 +4725,7 @@ impl EnvoyNetworkFilter for EnvoyNetworkFilterImpl {
-   }
- 
-   fn get_worker_index(&self) -> u32 {
--    unsafe { abi::envoy_dynamic_module_callback_network_filter_get_worker_index(self.raw) }
-+    0
-   }
- }
- 
 diff --git a/source/server/BUILD b/source/server/BUILD
 index c0246b1758..df1af5bd0c 100644
 --- a/source/server/BUILD
