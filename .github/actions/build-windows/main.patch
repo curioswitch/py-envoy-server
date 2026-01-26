@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index d006906f30..725bfdb8e9 100644
+index 04ecf37db1..55ec429418 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -70,6 +70,15 @@ genrule(
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index d48681be57..b9714c2693 100644
+index 148c930a67..891352a0f6 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -347,7 +347,7 @@ index d48681be57..b9714c2693 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -217,6 +222,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -215,6 +220,7 @@ def envoy_dependencies(skip_targets = []):
      )
      external_http_archive("envoy_toolshed")
  
@@ -355,7 +355,7 @@ index d48681be57..b9714c2693 100644
      _com_github_maxmind_libmaxminddb()
      _thrift()
  
-@@ -810,7 +816,10 @@ def _com_github_luajit_luajit():
+@@ -800,7 +806,10 @@ def _com_github_luajit_luajit():
      external_http_archive(
          name = "com_github_luajit_luajit",
          build_file_content = BUILD_ALL_CONTENT,
@@ -367,7 +367,7 @@ index d48681be57..b9714c2693 100644
          patch_args = ["-p1"],
      )
  
-@@ -937,3 +946,9 @@ def _com_github_maxmind_libmaxminddb():
+@@ -927,3 +936,9 @@ def _com_github_maxmind_libmaxminddb():
          name = "com_github_maxmind_libmaxminddb",
          build_file_content = BUILD_ALL_CONTENT,
      )
@@ -378,12 +378,12 @@ index d48681be57..b9714c2693 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 653ea9443f..3efcf071b7 100644
+index 535eb39c51..870d47d385 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -1116,6 +1116,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -695,6 +695,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+         sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
-         release_date = "2024-09-05",
      ),
 +    com_github_dlfcn_win32 = dict(
 +        project_name = "dlfcn-win32",
@@ -405,8 +405,8 @@ index 653ea9443f..3efcf071b7 100644
 +        license_url = "https://github.com/dlfcn-win32/dlfcn-win32/blob/v{version}/COPYING",
 +    ),
      com_github_maxmind_libmaxminddb = dict(
-         project_name = "maxmind_libmaxminddb",
-         project_desc = "C library for reading MaxMind DB files",
+         version = "1.12.2",
+         sha256 = "1bfbf8efba3ed6462e04e225906ad5ce5fe958aa3d626a1235b2a2253d600743",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 08f2227c4f..85f6c25af3 100644
 --- a/envoy/api/os_sys_calls.h
