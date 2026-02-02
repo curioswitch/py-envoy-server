@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 04ecf37db1..3ec6bd9fb8 100644
+index 40c6a72f72..c52d83e97d 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -70,6 +70,15 @@ genrule(
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 7a77d40d07..a6d00d288b 100644
+index cb4ab56456..9ca06a64a2 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -335,9 +335,9 @@ index 7a77d40d07..a6d00d288b 100644
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
-@@ -82,7 +84,10 @@ def _cc_deps():
-     external_http_archive(
-         name = "com_google_protoconverter",
+@@ -86,7 +88,10 @@ def _cc_deps():
+         "proto-converter",
+         location_name = "com_google_protoconverter",
          patch_args = ["-p1"],
 -        patches = ["@envoy//bazel:com_google_protoconverter.patch"],
 +        patches = [
@@ -347,7 +347,7 @@ index 7a77d40d07..a6d00d288b 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -215,6 +220,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -233,6 +238,7 @@ def envoy_dependencies(skip_targets = []):
      )
      external_http_archive("envoy_toolshed")
  
@@ -355,7 +355,7 @@ index 7a77d40d07..a6d00d288b 100644
      _com_github_maxmind_libmaxminddb()
      _thrift()
  
-@@ -794,7 +800,10 @@ def _com_github_luajit_luajit():
+@@ -815,7 +821,10 @@ def _com_github_luajit_luajit():
      external_http_archive(
          name = "com_github_luajit_luajit",
          build_file_content = BUILD_ALL_CONTENT,
@@ -367,7 +367,7 @@ index 7a77d40d07..a6d00d288b 100644
          patch_args = ["-p1"],
      )
  
-@@ -921,3 +930,9 @@ def _com_github_maxmind_libmaxminddb():
+@@ -935,3 +944,9 @@ def _com_github_maxmind_libmaxminddb():
          name = "com_github_maxmind_libmaxminddb",
          build_file_content = BUILD_ALL_CONTENT,
      )
@@ -378,10 +378,10 @@ index 7a77d40d07..a6d00d288b 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index ea3ea3dadb..fa7b1ec9ff 100644
+index 40b87a33e5..50d0862ea1 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -677,6 +677,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -665,6 +665,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -437,7 +437,7 @@ index 08f2227c4f..85f6c25af3 100644
  namespace Api {
  
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
-index 42075f881f..58a4c15ae8 100644
+index 79ebc8f3c3..9b0a22021c 100644
 --- a/envoy/common/platform.h
 +++ b/envoy/common/platform.h
 @@ -69,11 +69,14 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
@@ -867,10 +867,10 @@ index f45aad8707..9d7106ff44 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
-index c5cc8c0020..799ad67102 100644
+index 788aa306a3..d92e4869e4 100644
 --- a/source/extensions/common/aws/BUILD
 +++ b/source/extensions/common/aws/BUILD
-@@ -77,6 +77,7 @@ envoy_cc_library(
+@@ -76,6 +76,7 @@ envoy_cc_library(
      ],
      deps = [
          "//envoy/common:pure_lib",
