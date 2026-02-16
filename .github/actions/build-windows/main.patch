@@ -1,8 +1,8 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 40c6a72f72..c52d83e97d 100644
+index 05ea3ea3cc..006b6d70b1 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -70,6 +70,15 @@ genrule(
+@@ -71,6 +71,15 @@ genrule(
      stamp = 1,
  )
  
@@ -54,7 +54,7 @@ index 0000000000..853d5b57e2
 +     name = "aarch64",
 +     values = {"cpu": "linux-aarch_64"},
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index f6d6eac6e1..34ed4e9652 100644
+index 8282fb3e4f..136abe4db4 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -229,7 +229,10 @@ def envoy_exported_symbols_input():
@@ -96,7 +96,7 @@ index f8b9c93908..f1b38493e6 100644
      local_defines = [
          "XXH_NAMESPACE=ZSTD_",
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index d8fdb8980a..a384262842 100644
+index 7cd494b368..e3fa4d6f35 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -150,7 +150,7 @@ index d8fdb8980a..a384262842 100644
      name = "maxmind",
      build_args = select({
 diff --git a/bazel/foreign_cc/cel-cpp.patch b/bazel/foreign_cc/cel-cpp.patch
-index 9b28219a40..81aeb08405 100644
+index eedfc5efa9..a6ed6e807f 100644
 --- a/bazel/foreign_cc/cel-cpp.patch
 +++ b/bazel/foreign_cc/cel-cpp.patch
 @@ -1,3 +1,15 @@
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index cb4ab56456..9ca06a64a2 100644
+index c77d2936da..3ba6b3c26b 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -335,9 +335,9 @@ index cb4ab56456..9ca06a64a2 100644
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
-@@ -86,7 +88,10 @@ def _cc_deps():
+@@ -87,7 +89,10 @@ def _cc_deps():
          "proto-converter",
-         location_name = "com_google_protoconverter",
+         location_name = "proto_converter",
          patch_args = ["-p1"],
 -        patches = ["@envoy//bazel:com_google_protoconverter.patch"],
 +        patches = [
@@ -347,29 +347,41 @@ index cb4ab56456..9ca06a64a2 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -233,6 +238,7 @@ def envoy_dependencies(skip_targets = []):
-     )
+@@ -235,7 +240,12 @@ def envoy_dependencies(skip_targets = []):
+     external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
++<<<<<<< HEAD
 +    _com_github_dlfcn_win32()
-     _com_github_maxmind_libmaxminddb()
++    _com_github_maxmind_libmaxminddb()
++=======
+     _libmaxminddb()
++>>>>>>> 9edc64ff07ce2f934adf8f3768d9ac5cc51c07f2
      _thrift()
  
-@@ -815,7 +821,10 @@ def _com_github_luajit_luajit():
+     external_http_archive("rules_license")
+@@ -841,9 +851,18 @@ def _emsdk():
+ def _luajit():
+     LUAJIT_BUILD_CONTENT = """%s\nalias(name = "luajit", actual = ":all", visibility = ["//visibility:public"])""" % BUILD_ALL_CONTENT
      external_http_archive(
-         name = "com_github_luajit_luajit",
-         build_file_content = BUILD_ALL_CONTENT,
--        patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
++<<<<<<< HEAD
++        name = "com_github_luajit_luajit",
++        build_file_content = BUILD_ALL_CONTENT,
 +        patches = [
 +            "@envoy//bazel/foreign_cc:luajit.patch",
 +            "@envoy//bazel/foreign_cc:luajit_win.patch",
 +        ],
++=======
+         name = "luajit",
+         build_file_content = LUAJIT_BUILD_CONTENT,
+         patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
++>>>>>>> 9edc64ff07ce2f934adf8f3768d9ac5cc51c07f2
          patch_args = ["-p1"],
      )
  
-@@ -935,3 +944,9 @@ def _com_github_maxmind_libmaxminddb():
-         name = "com_github_maxmind_libmaxminddb",
-         build_file_content = BUILD_ALL_CONTENT,
+@@ -968,3 +987,9 @@ def _libmaxminddb():
+         name = "libmaxminddb",
+         build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
 +
 +def _com_github_dlfcn_win32():
@@ -378,13 +390,14 @@ index cb4ab56456..9ca06a64a2 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 40b87a33e5..50d0862ea1 100644
+index cc77f2b836..33e41c5e09 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -665,6 +665,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -659,7 +659,30 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
++<<<<<<< HEAD
 +    com_github_dlfcn_win32 = dict(
 +        project_name = "dlfcn-win32",
 +        project_desc = "An implementation of dlfcn for Windows.",
@@ -404,9 +417,13 @@ index 40b87a33e5..50d0862ea1 100644
 +        license = "MIT",
 +        license_url = "https://github.com/dlfcn-win32/dlfcn-win32/blob/v{version}/COPYING",
 +    ),
-     com_github_maxmind_libmaxminddb = dict(
++    com_github_maxmind_libmaxminddb = dict(
++=======
+     libmaxminddb = dict(
++>>>>>>> 9edc64ff07ce2f934adf8f3768d9ac5cc51c07f2
          version = "1.12.2",
          sha256 = "1bfbf8efba3ed6462e04e225906ad5ce5fe958aa3d626a1235b2a2253d600743",
+         strip_prefix = "libmaxminddb-{version}",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 08f2227c4f..85f6c25af3 100644
 --- a/envoy/api/os_sys_calls.h
@@ -437,7 +454,7 @@ index 08f2227c4f..85f6c25af3 100644
  namespace Api {
  
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
-index 79ebc8f3c3..9b0a22021c 100644
+index 91721d3f87..b7e60b61cd 100644
 --- a/envoy/common/platform.h
 +++ b/envoy/common/platform.h
 @@ -69,11 +69,14 @@ typedef DWORD signal_t;            // NOLINT(modernize-use-using)
@@ -456,7 +473,7 @@ index 79ebc8f3c3..9b0a22021c 100644
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
 diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
-index 7fda90aa08..438bd9c936 100644
+index 6f38a06858..ac529be3b6 100644
 --- a/source/common/api/win32/os_sys_calls_impl.cc
 +++ b/source/common/api/win32/os_sys_calls_impl.cc
 @@ -244,20 +244,12 @@ SysCallIntResult OsSysCallsImpl::fstat(os_fd_t fd, struct stat* buf) {
@@ -481,10 +498,10 @@ index 7fda90aa08..438bd9c936 100644
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
-index c1beac6a52..c98902b2e3 100644
+index e53b161d14..08553c800e 100644
 --- a/source/common/common/win32/thread_impl.cc
 +++ b/source/common/common/win32/thread_impl.cc
-@@ -22,9 +22,8 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
+@@ -23,9 +23,8 @@ ThreadImplWin32::ThreadImplWin32(std::function<void()> thread_routine, OptionsOp
          return 0;
        },
        this, 0, nullptr));
@@ -496,7 +513,7 @@ index c1beac6a52..c98902b2e3 100644
    }
    RELEASE_ASSERT(thread_handle_ != 0, "");
  }
-@@ -41,7 +40,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
+@@ -42,7 +41,7 @@ ThreadPtr ThreadFactoryImplWin32::createThread(std::function<void()> thread_rout
    return std::make_unique<ThreadImplWin32>(thread_routine, options);
  }
  
@@ -519,10 +536,10 @@ index 87be085291..d40a6b0c6b 100644
  
  } // namespace Thread
 diff --git a/source/common/event/win32/signal_impl.cc b/source/common/event/win32/signal_impl.cc
-index 0466ee6b73..8cdc1b2510 100644
+index 962d45a786..623120d8d3 100644
 --- a/source/common/event/win32/signal_impl.cc
 +++ b/source/common/event/win32/signal_impl.cc
-@@ -32,9 +32,10 @@ SignalEventImpl::SignalEventImpl(DispatcherImpl& dispatcher, signal_t signal_num
+@@ -33,9 +33,10 @@ SignalEventImpl::SignalEventImpl(DispatcherImpl& dispatcher, signal_t signal_num
  
    read_handle_->initializeFileEvent(
        dispatcher,
@@ -535,10 +552,10 @@ index 0466ee6b73..8cdc1b2510 100644
        Event::FileTriggerType::Level, Event::FileReadyType::Read);
    eventBridgeHandlersSingleton::get()[signal_num] = write_handle;
 diff --git a/source/common/filesystem/win32/watcher_impl.cc b/source/common/filesystem/win32/watcher_impl.cc
-index 58905d996d..833d657ac2 100644
+index 2e7c0e7243..218ea50778 100644
 --- a/source/common/filesystem/win32/watcher_impl.cc
 +++ b/source/common/filesystem/win32/watcher_impl.cc
-@@ -22,9 +22,10 @@ WatcherImpl::WatcherImpl(Event::Dispatcher& dispatcher, Filesystem::Instance& fi
+@@ -23,9 +23,10 @@ WatcherImpl::WatcherImpl(Event::Dispatcher& dispatcher, Filesystem::Instance& fi
  
    read_handle_->initializeFileEvent(
        dispatcher,
@@ -550,7 +567,7 @@ index 58905d996d..833d657ac2 100644
        },
        Event::FileTriggerType::Level, Event::FileReadyType::Read);
  
-@@ -203,7 +204,7 @@ void WatcherImpl::directoryChangeCompletion(DWORD err, DWORD num_bytes, LPOVERLA
+@@ -204,7 +205,7 @@ void WatcherImpl::directoryChangeCompletion(DWORD err, DWORD num_bytes, LPOVERLA
        if (watch.file_ == file && (watch.events_ & events)) {
          ENVOY_LOG(debug, "matched callback: file: {}", watcher->wstring_converter_.to_bytes(file));
          const auto cb = watch.cb_;
@@ -598,7 +615,7 @@ index 6b47bc3e8b..ad2f007707 100644
        auto concurrency = context->options().concurrency();
        worker_index = concurrency; // Set main/test thread on free index.
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
-index dcf868020f..4104956251 100644
+index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 @@ -1,8 +1,12 @@
@@ -615,7 +632,7 @@ index dcf868020f..4104956251 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-index dac27da17d..914315e4c5 100644
+index 94ea12ce05..e66dd0bf40 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 @@ -1,8 +1,13 @@
@@ -633,7 +650,7 @@ index dac27da17d..914315e4c5 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 751857d714..8ab47295eb 100644
+index 6645e3e201..a2ceadc64d 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -10,6 +10,7 @@
@@ -696,7 +713,7 @@ index 751857d714..8ab47295eb 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1015,30 +1019,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1026,30 +1030,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -743,7 +760,7 @@ index 751857d714..8ab47295eb 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
-@@ -1185,14 +1191,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
+@@ -1196,14 +1202,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
        // Trigger accept mechanism safely.
        if (isTriggerPipeReady()) {
          char trigger_byte = 1;
@@ -764,10 +781,10 @@ index 751857d714..8ab47295eb 100644
        }
      }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index defadb1fbf..30c7c483e8 100644
+index e63ae65b1c..4b857d4a83 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-@@ -208,7 +208,7 @@ public:
+@@ -216,7 +216,7 @@ public:
     * Get the file descriptor for the pipe monitor used to wake up accept().
     * @return the file descriptor for the pipe monitor
     */
@@ -776,7 +793,7 @@ index defadb1fbf..30c7c483e8 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -414,8 +414,8 @@ private:
+@@ -423,8 +423,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -787,7 +804,7 @@ index defadb1fbf..30c7c483e8 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -430,7 +430,7 @@ private:
+@@ -439,7 +439,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -809,7 +826,7 @@ index b543752543..fdb98e0624 100644
  #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index 3ae8076971..65079577cb 100644
+index 4d4399b63c..c4b23e87f6 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 @@ -1,7 +1,5 @@
@@ -867,7 +884,7 @@ index f45aad8707..9d7106ff44 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
-index 788aa306a3..d92e4869e4 100644
+index ef910284b0..c95be7697b 100644
 --- a/source/extensions/common/aws/BUILD
 +++ b/source/extensions/common/aws/BUILD
 @@ -76,6 +76,7 @@ envoy_cc_library(
@@ -879,7 +896,7 @@ index 788aa306a3..d92e4869e4 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index e3a294ae09..a28889f6c7 100644
+index 0675a63bd8..c0c8bc82e0 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
@@ -895,20 +912,20 @@ index e3a294ae09..a28889f6c7 100644
  
  envoy_cc_library(
 diff --git a/source/extensions/dynamic_modules/abi/BUILD b/source/extensions/dynamic_modules/abi/BUILD
-index 53406ed980..9302813ae6 100644
+index 10a0e03825..697ca723a3 100644
 --- a/source/extensions/dynamic_modules/abi/BUILD
 +++ b/source/extensions/dynamic_modules/abi/BUILD
-@@ -46,3 +46,5 @@ cc_library(
-     deps = [":abi_version_lib"],
+@@ -12,3 +12,5 @@ cc_library(
+     visibility = ["//visibility:public"],
      alwayslink = True,
  )
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index 69e6d189ae..512124de76 100644
+index da14d5f64f..ceba47eba7 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -23,14 +23,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -22,14 +22,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -929,7 +946,7 @@ index 69e6d189ae..512124de76 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -40,13 +44,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -39,13 +43,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -947,16 +964,16 @@ index 69e6d189ae..512124de76 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -62,7 +68,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -61,7 +67,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
 -        absl::StrCat("Failed to initialize dynamic module: ", object_file_absolute_path.c_str()));
 +        absl::StrCat("Failed to initialize dynamic module: ", object_file_absolute_path.string()));
    }
-   // Checks the kAbiVersion and the version of the dynamic module.
-   if (absl::string_view(abi_version) != absl::string_view(kAbiVersion)) {
-@@ -80,8 +86,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+   // We log a warning if the ABI version does not match exactly.
+   if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
+@@ -85,8 +91,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -971,7 +988,7 @@ index 69e6d189ae..512124de76 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -108,7 +120,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -113,7 +125,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
@@ -981,7 +998,7 @@ index 69e6d189ae..512124de76 100644
                     "to initialize: ",
                     dynamic_module.status().message()));
 diff --git a/source/server/BUILD b/source/server/BUILD
-index c0246b1758..df1af5bd0c 100644
+index 662cdb5123..7644c5e0e9 100644
 --- a/source/server/BUILD
 +++ b/source/server/BUILD
 @@ -239,6 +239,7 @@ envoy_cc_library(
@@ -989,8 +1006,8 @@ index c0246b1758..df1af5bd0c 100644
          "//source/common/common:logger_lib",
          "//source/common/filesystem:filesystem_lib",
 +        "//source/common/singleton:threadsafe_singleton",
-         "@com_google_absl//absl/strings",
-         "@com_google_absl//absl/types:optional",
+         "@abseil-cpp//absl/strings",
+         "@abseil-cpp//absl/types:optional",
      ],
 diff --git a/tools/windows/BUILD b/tools/windows/BUILD
 new file mode 100644
