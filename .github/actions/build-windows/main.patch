@@ -390,7 +390,7 @@ index c77d2936da..3ba6b3c26b 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index cc77f2b836..33e41c5e09 100644
+index 54caa9f548..544dc02c51 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,7 +659,30 @@ REPOSITORY_LOCATIONS_SPEC = dict(
