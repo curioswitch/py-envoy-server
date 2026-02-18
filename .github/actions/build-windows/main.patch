@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index c77d2936da..3ba6b3c26b 100644
+index c77d2936da..66551a66df 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -347,39 +347,27 @@ index c77d2936da..3ba6b3c26b 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -235,7 +240,12 @@ def envoy_dependencies(skip_targets = []):
+@@ -235,6 +240,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
-+<<<<<<< HEAD
 +    _com_github_dlfcn_win32()
-+    _com_github_maxmind_libmaxminddb()
-+=======
      _libmaxminddb()
-+>>>>>>> 9edc64ff07ce2f934adf8f3768d9ac5cc51c07f2
      _thrift()
  
-     external_http_archive("rules_license")
-@@ -841,9 +851,18 @@ def _emsdk():
- def _luajit():
-     LUAJIT_BUILD_CONTENT = """%s\nalias(name = "luajit", actual = ":all", visibility = ["//visibility:public"])""" % BUILD_ALL_CONTENT
+@@ -843,7 +849,10 @@ def _luajit():
      external_http_archive(
-+<<<<<<< HEAD
-+        name = "com_github_luajit_luajit",
-+        build_file_content = BUILD_ALL_CONTENT,
+         name = "luajit",
+         build_file_content = LUAJIT_BUILD_CONTENT,
+-        patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
 +        patches = [
 +            "@envoy//bazel/foreign_cc:luajit.patch",
 +            "@envoy//bazel/foreign_cc:luajit_win.patch",
 +        ],
-+=======
-         name = "luajit",
-         build_file_content = LUAJIT_BUILD_CONTENT,
-         patches = ["@envoy//bazel/foreign_cc:luajit.patch"],
-+>>>>>>> 9edc64ff07ce2f934adf8f3768d9ac5cc51c07f2
          patch_args = ["-p1"],
      )
  
-@@ -968,3 +987,9 @@ def _libmaxminddb():
+@@ -968,3 +977,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
