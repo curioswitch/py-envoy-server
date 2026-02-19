@@ -100,7 +100,7 @@ runs:
           --per_file_copt=external/com_google_cel_cpp/.*@/DNOGDI `
           --verbose_failures `
           --curses=no `
-          envoy
+          //bazel/foreign_cc:luajit
 
     # When linking a dynamic module, it will import envoy.dll. The easiest way to deal
     # with this is name the actual executable envoy.dll - Windows will run it as a binary

@@ -204,7 +204,7 @@ index 0000000000..bba8b0d19b
 ++
 ++# Copy source tree to a build directory
 ++SRC_DIR="$(dirname "$(realpath "$0")")"
-++BUILD_DIR="$(basename "$SRC_DIR")"
+++BUILD_DIR="$(basename "$SRC_DIR")_build"
 ++cp -r "$SRC_DIR" "$BUILD_DIR"
 ++cd "$BUILD_DIR"
 ++
