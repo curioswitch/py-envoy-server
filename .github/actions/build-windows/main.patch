@@ -171,7 +171,7 @@ index eedfc5efa9..a6ed6e807f 100644
  --- a/common/internal/byte_string.cc
 diff --git a/bazel/foreign_cc/luajit_win.patch b/bazel/foreign_cc/luajit_win.patch
 new file mode 100644
-index 0000000000..bba8b0d19b
+index 0000000000..8b0ae5a505
 --- /dev/null
 +++ b/bazel/foreign_cc/luajit_win.patch
 @@ -0,0 +1,63 @@
@@ -204,7 +204,7 @@ index 0000000000..bba8b0d19b
 ++
 ++# Copy source tree to a build directory
 ++SRC_DIR="$(dirname "$(realpath "$0")")"
-++BUILD_DIR="$(basename "$SRC_DIR")"
+++BUILD_DIR="$(basename "$SRC_DIR")_build"
 ++cp -r "$SRC_DIR" "$BUILD_DIR"
 ++cd "$BUILD_DIR"
 ++
@@ -581,6 +581,37 @@ index f45e7f74b2..f715987527 100644
  #else
        std::free(p);
  #endif
+diff --git a/source/exe/win32/service_base.cc b/source/exe/win32/service_base.cc
+index f059f863c4..25a7dcd6e0 100644
+--- a/source/exe/win32/service_base.cc
++++ b/source/exe/win32/service_base.cc
+@@ -2,6 +2,8 @@
+ 
+ #include <codecvt>
+ #include <locale>
++#include <processenv.h>
++#include <shellapi.h>
+ 
+ #include "source/common/buffer/buffer_impl.h"
+ #include "source/common/common/assert.h"
+diff --git a/source/exe/win32/service_base.h b/source/exe/win32/service_base.h
+index 14bd8498dd..44be98e9f0 100644
+--- a/source/exe/win32/service_base.h
++++ b/source/exe/win32/service_base.h
+@@ -1,12 +1,9 @@
+ #pragma once
+ 
+-#include <processenv.h>
+-#include <shellapi.h>
+-#include <winsvc.h>
+-
+ #include <functional>
+ #include <string>
+ 
++#include "envoy/common/platform.h"
+ #include "envoy/event/signal.h"
+ 
+ #include "source/common/common/win32/event_logger_impl.h"
 diff --git a/source/extensions/access_loggers/dynamic_modules/access_log.cc b/source/extensions/access_loggers/dynamic_modules/access_log.cc
 index 6b47bc3e8b..ad2f007707 100644
 --- a/source/extensions/access_loggers/dynamic_modules/access_log.cc
