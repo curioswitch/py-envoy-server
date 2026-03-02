@@ -323,10 +323,10 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index c77d2936da..66551a66df 100644
+index 0cb517d346..7a440d74ac 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
-@@ -13,6 +13,8 @@ WINDOWS_SKIP_TARGETS = [
+@@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
      "envoy.filters.http.sxg",
      "envoy.tracers.dynamic_ot",
      "envoy.tracers.datadog",
@@ -335,7 +335,7 @@ index c77d2936da..66551a66df 100644
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
-@@ -87,7 +89,10 @@ def _cc_deps():
+@@ -88,7 +90,10 @@ def _cc_deps():
          "proto-converter",
          location_name = "proto_converter",
          patch_args = ["-p1"],
@@ -347,7 +347,7 @@ index c77d2936da..66551a66df 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -235,6 +240,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -236,6 +241,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -355,7 +355,7 @@ index c77d2936da..66551a66df 100644
      _libmaxminddb()
      _thrift()
  
-@@ -843,7 +849,10 @@ def _luajit():
+@@ -844,7 +850,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -367,7 +367,7 @@ index c77d2936da..66551a66df 100644
          patch_args = ["-p1"],
      )
  
-@@ -968,3 +977,9 @@ def _libmaxminddb():
+@@ -969,3 +978,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
@@ -378,7 +378,7 @@ index c77d2936da..66551a66df 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 8ca6aaa9a9..bb5d6a96eb 100644
+index 94967c6ba1..c8c83389f6 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,6 +659,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -910,7 +910,7 @@ index ef910284b0..c95be7697b 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index 0675a63bd8..c0c8bc82e0 100644
+index fb3630b74a..59d6e00e5f 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
 @@ -18,7 +18,10 @@ envoy_cc_library(
@@ -1011,6 +1011,24 @@ index da14d5f64f..ceba47eba7 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
+diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
+index dbf55856d5..c396f25063 100644
+--- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
++++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
+@@ -222,8 +222,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+     sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
+                       generateErrorJsonResponse(-32601, "Method field is not a string").dump());
+     return absl::InvalidArgumentError("Method field is not a string");
+-  } else if (json_rpc[McpConstants::METHOD_FIELD] ==
+-             McpConstants::Methods::NOTIFICATION_INITIALIZED) {
++  }
++
++  const absl::string_view method =
++      json_rpc[McpConstants::METHOD_FIELD].get_ref<const std::string&>();
++  if (method == McpConstants::Methods::NOTIFICATION_INITIALIZED) {
+     // The notifications/initialized request is not required to have an ID
+     // field.
+   } else if (!session_id.ok()) {
 diff --git a/source/server/BUILD b/source/server/BUILD
 index 662cdb5123..7644c5e0e9 100644
 --- a/source/server/BUILD
