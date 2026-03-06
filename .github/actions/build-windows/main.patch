@@ -256,7 +256,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repo.bzl b/bazel/repo.bzl
-index f1a2547a52..0ebadc128e 100644
+index 27b1cd358c..9754856a7e 100644
 --- a/bazel/repo.bzl
 +++ b/bazel/repo.bzl
 @@ -65,25 +65,45 @@ def _envoy_repo_impl(repository_ctx):
@@ -323,7 +323,7 @@ index f1a2547a52..0ebadc128e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 0cb517d346..7a440d74ac 100644
+index 3640a38196..e784cb1e5b 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -355,7 +355,7 @@ index 0cb517d346..7a440d74ac 100644
      _libmaxminddb()
      _thrift()
  
-@@ -844,7 +850,10 @@ def _luajit():
+@@ -845,7 +851,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -367,7 +367,7 @@ index 0cb517d346..7a440d74ac 100644
          patch_args = ["-p1"],
      )
  
-@@ -969,3 +978,9 @@ def _libmaxminddb():
+@@ -970,3 +979,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
@@ -378,7 +378,7 @@ index 0cb517d346..7a440d74ac 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 94967c6ba1..c8c83389f6 100644
+index 0e2cf2ce29..83373210de 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,6 +659,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -664,7 +664,7 @@ index 94ea12ce05..e66dd0bf40 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 6645e3e201..a2ceadc64d 100644
+index b49e5c782d..86e97c8cec 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -10,6 +10,7 @@
@@ -675,7 +675,7 @@ index 6645e3e201..a2ceadc64d 100644
  #include "source/common/buffer/buffer_impl.h"
  #include "source/common/common/logger.h"
  #include "source/common/event/real_time_system.h"
-@@ -56,13 +57,14 @@ void ReverseConnectionIOHandle::cleanup() {
+@@ -63,13 +64,14 @@ void ReverseConnectionIOHandle::cleanup() {
                   "reverse_tunnel: cleaning up trigger pipe; "
                   "trigger_pipe_write_fd_={}, trigger_pipe_read_fd_={}",
                   trigger_pipe_write_fd_, trigger_pipe_read_fd_);
@@ -696,7 +696,7 @@ index 6645e3e201..a2ceadc64d 100644
    }
  
    // Cancel the retry timer safely.
-@@ -163,8 +165,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
+@@ -170,8 +172,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
  
    // Replace the monitored FD with pipe read FD
    // This must happen before any event registration.
@@ -707,7 +707,7 @@ index 6645e3e201..a2ceadc64d 100644
      ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
      fd_ = trigger_fd;
    }
-@@ -190,7 +192,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+@@ -197,7 +199,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
    ENVOY_LOG(debug, "reverse_tunnel: accept() called");
    if (isTriggerPipeReady()) {
      char trigger_byte;
@@ -718,7 +718,7 @@ index 6645e3e201..a2ceadc64d 100644
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "reverse_tunnel: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -361,7 +365,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -368,7 +372,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "reverse_tunnel: event: {}", static_cast<int>(event));
  }
  
@@ -727,7 +727,7 @@ index 6645e3e201..a2ceadc64d 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1026,30 +1030,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1033,30 +1037,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -774,7 +774,7 @@ index 6645e3e201..a2ceadc64d 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
-@@ -1196,14 +1202,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
+@@ -1203,14 +1209,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
        // Trigger accept mechanism safely.
        if (isTriggerPipeReady()) {
          char trigger_byte = 1;
@@ -852,23 +852,24 @@ index 32717efb16..f2c2ac2994 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index cb0219b45b..64e06ae6a5 100644
+index 4701fd94b1..785fd59a36 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -292,7 +292,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
-       // Found the FD in idle pool, this is an idle socket.
-       ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
-                 node_id, cluster_id, fd);
+@@ -293,7 +293,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+     // Found in idle pool — erase from list and clean up timers/events.
+     ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
+               node_id, cluster_id, fd);
+-    ::shutdown(fd, SHUT_RDWR);
 +#ifndef _WIN32
-       ::shutdown(fd, SHUT_RDWR);
++      ::shutdown(fd, SHUT_RDWR);
 +#else
 +      ::shutdown(fd, SD_BOTH);
 +#endif // _WIN32
-       itr = sockets.erase(itr);
-       is_idle_socket = true;
+     accepted_reverse_connections_[node_id].erase(socket_it->second);
+     fd_to_socket_it_map_.erase(socket_it);
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-index d69167f8a6..724189ecae 100644
+index f10c3de9c7..575f4e1d13 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 @@ -1,7 +1,5 @@
@@ -936,10 +937,10 @@ index 10a0e03825..697ca723a3 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index da14d5f64f..ceba47eba7 100644
+index eea35289e9..698b6785a8 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -22,14 +22,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -24,14 +24,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -960,7 +961,7 @@ index da14d5f64f..ceba47eba7 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -39,13 +43,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -41,13 +45,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -978,7 +979,7 @@ index da14d5f64f..ceba47eba7 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -61,7 +67,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -63,7 +69,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -987,7 +988,7 @@ index da14d5f64f..ceba47eba7 100644
    }
    // We log a warning if the ABI version does not match exactly.
    if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
-@@ -85,8 +91,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -94,8 +100,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -1002,7 +1003,7 @@ index da14d5f64f..ceba47eba7 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -113,7 +125,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -122,7 +134,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
