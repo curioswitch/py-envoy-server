@@ -256,7 +256,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repo.bzl b/bazel/repo.bzl
-index 27b1cd358c..9754856a7e 100644
+index 561c99b71c..0637053dd4 100644
 --- a/bazel/repo.bzl
 +++ b/bazel/repo.bzl
 @@ -65,25 +65,45 @@ def _envoy_repo_impl(repository_ctx):
@@ -323,7 +323,7 @@ index 27b1cd358c..9754856a7e 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 3640a38196..e784cb1e5b 100644
+index ad51ee705e..575be49e36 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -367,7 +367,7 @@ index 3640a38196..e784cb1e5b 100644
          patch_args = ["-p1"],
      )
  
-@@ -970,3 +979,9 @@ def _libmaxminddb():
+@@ -974,3 +983,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
@@ -378,7 +378,7 @@ index 3640a38196..e784cb1e5b 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 0e2cf2ce29..83373210de 100644
+index c978510373..386e1635fd 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,6 +659,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -852,10 +852,10 @@ index 32717efb16..f2c2ac2994 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 4701fd94b1..785fd59a36 100644
+index 7ab08bb4f1..e853831d10 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -293,7 +293,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+@@ -302,7 +302,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
      // Found in idle pool — erase from list and clean up timers/events.
      ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
                node_id, cluster_id, fd);
@@ -911,12 +911,12 @@ index ef910284b0..c95be7697b 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index fb3630b74a..59d6e00e5f 100644
+index 75d90228c2..eb0e259cbd 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
-@@ -18,7 +18,10 @@ envoy_cc_library(
-     deps = [
+@@ -19,7 +19,10 @@ envoy_cc_library(
          "//envoy/common:exception_lib",
+         "//source/common/common:utility_lib",
          "//source/extensions/dynamic_modules/abi",
 -    ],
 +    ] + select({
@@ -937,10 +937,10 @@ index 10a0e03825..697ca723a3 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index eea35289e9..698b6785a8 100644
+index 6d50e77fcd..93aab775b3 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -24,14 +24,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -27,14 +27,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -961,7 +961,7 @@ index eea35289e9..698b6785a8 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -41,13 +45,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -44,13 +48,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -979,7 +979,7 @@ index eea35289e9..698b6785a8 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -63,7 +69,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -66,7 +72,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -988,7 +988,7 @@ index eea35289e9..698b6785a8 100644
    }
    // We log a warning if the ABI version does not match exactly.
    if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
-@@ -94,8 +100,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -97,8 +103,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -1003,7 +1003,7 @@ index eea35289e9..698b6785a8 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -122,7 +134,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -125,7 +137,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
