@@ -323,7 +323,7 @@ index 561c99b71c..0637053dd4 100644
      api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
      version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index ad51ee705e..575be49e36 100644
+index 2ef7378884..77505ab75e 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -355,7 +355,7 @@ index ad51ee705e..575be49e36 100644
      _libmaxminddb()
      _thrift()
  
-@@ -845,7 +851,10 @@ def _luajit():
+@@ -886,7 +892,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -367,7 +367,7 @@ index ad51ee705e..575be49e36 100644
          patch_args = ["-p1"],
      )
  
-@@ -974,3 +983,9 @@ def _libmaxminddb():
+@@ -1015,3 +1024,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
@@ -378,7 +378,7 @@ index ad51ee705e..575be49e36 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index c978510373..386e1635fd 100644
+index cb9fefaea4..889d9e6b2b 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,6 +659,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -937,10 +937,28 @@ index 10a0e03825..697ca723a3 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index 6d50e77fcd..93aab775b3 100644
+index 6d50e77fcd..f3e1c5df7a 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
-@@ -27,14 +27,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -1,9 +1,15 @@
+ #include "source/extensions/dynamic_modules/dynamic_modules.h"
+ 
+ #include <dlfcn.h>
+-#include <unistd.h>
+-
+ #include <cerrno>
++#ifndef _WIN32
++#include <unistd.h>
++#else
++#include <fcntl.h>
++#include <io.h>
++#include <stdlib.h>
++#include <sys/stat.h>
++#endif
+ #include <string>
+ 
+ #include "envoy/common/exception.h"
+@@ -27,14 +33,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -961,7 +979,7 @@ index 6d50e77fcd..93aab775b3 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -44,13 +48,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -44,13 +54,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -979,7 +997,7 @@ index 6d50e77fcd..93aab775b3 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -66,7 +72,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -66,7 +78,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -988,7 +1006,7 @@ index 6d50e77fcd..93aab775b3 100644
    }
    // We log a warning if the ABI version does not match exactly.
    if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
-@@ -97,8 +103,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -97,8 +109,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -1003,7 +1021,7 @@ index 6d50e77fcd..93aab775b3 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -125,7 +137,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -125,7 +143,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
@@ -1012,11 +1030,66 @@ index 6d50e77fcd..93aab775b3 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
+@@ -162,7 +180,19 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleFromBytes(const absl::string_vi
+   // If the module was already loaded at this path, newDynamicModule's RTLD_NOLOAD check
+   // returns the existing handle without re-init.
+   std::string staging_template = temp_file_path.string() + ".XXXXXX";
+-  int fd = mkstemp(staging_template.data());
++  int fd = -1;
++#ifndef _WIN32
++  fd = mkstemp(staging_template.data());
++#else
++  const errno_t mktemp_result = _mktemp_s(staging_template.data(), staging_template.size() + 1);
++  if (mktemp_result != 0) {
++    return absl::InternalError(absl::StrCat(
++        "Failed to create temporary staging file for dynamic module: ", staging_template, ": ",
++        errorDetails(mktemp_result)));
++  }
++  fd = _open(staging_template.c_str(), _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY,
++             _S_IREAD | _S_IWRITE);
++#endif
+   if (fd == -1) {
+     return absl::InternalError(absl::StrCat(
+         "Failed to create temporary staging file for dynamic module: ", staging_template, ": ",
+@@ -171,20 +201,33 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleFromBytes(const absl::string_vi
+ 
+   size_t total_written = 0;
+   while (total_written < module_bytes.size()) {
++#ifndef _WIN32
+     ssize_t written =
+         write(fd, module_bytes.data() + total_written, module_bytes.size() - total_written);
++#else
++    int written = _write(fd, module_bytes.data() + total_written,
++                         static_cast<unsigned int>(module_bytes.size() - total_written));
++#endif
+     if (written < 0) {
++#ifndef _WIN32
+       if (errno == EINTR) {
+         continue;
+       }
+       close(fd);
++#else
++      _close(fd);
++#endif
+       std::filesystem::remove(staging_template);
+       return absl::InternalError(
+           absl::StrCat("Failed to write to staging file for dynamic module: ", staging_template));
+     }
+     total_written += written;
+   }
++#ifndef _WIN32
+   close(fd);
++#else
++  _close(fd);
++#endif
+ 
+   std::filesystem::path staging_path(staging_template);
+   std::filesystem::permissions(staging_path, std::filesystem::perms::owner_all,
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index dbf55856d5..c396f25063 100644
+index 8684c9ee4d..805b321127 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -222,8 +222,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -291,8 +291,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
