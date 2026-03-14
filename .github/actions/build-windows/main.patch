@@ -80,12 +80,12 @@ index 8282fb3e4f..136abe4db4 100644
      })
  
 diff --git a/bazel/external/zstd.BUILD b/bazel/external/zstd.BUILD
-index f8b9c93908..f1b38493e6 100644
+index 475a27afd9..4e70939377 100644
 --- a/bazel/external/zstd.BUILD
 +++ b/bazel/external/zstd.BUILD
-@@ -54,7 +54,10 @@ cc_library(
-         "lib/zstd_errors.h",
-     ],
+@@ -63,7 +63,10 @@ cc_library(
+         "//conditions:default": [],
+     }),
      includes = ["lib"],
 -    linkopts = ["-pthread"],
 +    linkopts = select({
@@ -93,8 +93,8 @@ index f8b9c93908..f1b38493e6 100644
 +        "//conditions:default": ["-pthread"],
 +    }),
      linkstatic = True,
-     local_defines = [
-         "XXH_NAMESPACE=ZSTD_",
+ )
+ 
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
 index 7cd494b368..e3fa4d6f35 100644
 --- a/bazel/foreign_cc/BUILD
@@ -378,7 +378,7 @@ index 2ef7378884..77505ab75e 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index cb9fefaea4..889d9e6b2b 100644
+index adf8f69fa9..c537b53b0b 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -659,6 +659,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
