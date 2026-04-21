@@ -387,7 +387,7 @@ index f77d973161..ae82172a92 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index ac400fce85..fb902ac549 100644
+index 2cc07f4ba1..12f308970a 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -804,10 +804,10 @@ index b10e408fc7..a4e3203738 100644
        }
      }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index e63ae65b1c..4b857d4a83 100644
+index 49b628620e..e2750c7ff9 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-@@ -216,7 +216,7 @@ public:
+@@ -219,7 +219,7 @@ public:
     * Get the file descriptor for the pipe monitor used to wake up accept().
     * @return the file descriptor for the pipe monitor
     */
@@ -816,7 +816,7 @@ index e63ae65b1c..4b857d4a83 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -423,8 +423,8 @@ private:
+@@ -433,8 +433,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -827,7 +827,7 @@ index e63ae65b1c..4b857d4a83 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -439,7 +439,7 @@ private:
+@@ -449,7 +449,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -889,6 +889,19 @@ index f10c3de9c7..575f4e1d13 100644
  #include <atomic>
  #include <cstdint>
  #include <list>
+diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
+index d9dbeb177b..5e44c5a4af 100644
+--- a/source/extensions/clusters/dynamic_modules/cluster.cc
++++ b/source/extensions/clusters/dynamic_modules/cluster.cc
+@@ -164,7 +164,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
+   Event::Dispatcher& dispatcher = cluster->dispatcher_;
+   // The lifecycle handle resets unregister from main-thread-owned notifiers. When the handle is
+   // destroyed on a worker thread, post the full teardown onto the main dispatcher.
+-  if (!Thread::MainThread::isMainThread() && !Thread::TestThread::isTestThread()) {
++  if (!Thread::MainThread::isMainThread()) {
+     dispatcher.post([cluster = std::move(cluster)]() mutable {
+       cluster->server_initialized_handle_.reset();
+       cluster->shutdown_handle_.reset();
 diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
 index 133d8b5766..dbdd364c67 100644
 --- a/source/extensions/clusters/reverse_connection/reverse_connection.h
@@ -1095,10 +1108,10 @@ index 0a18ef812f..d04f9ed3e2 100644
    std::filesystem::path staging_path(staging_template);
    std::filesystem::permissions(staging_path, std::filesystem::perms::owner_all,
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index 6fbaa38138..7e951abb49 100644
+index 770b1f28ea..dea87ba740 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -492,8 +492,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -556,8 +556,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
