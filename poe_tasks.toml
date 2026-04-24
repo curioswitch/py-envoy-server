@@ -18,6 +18,16 @@ cmd = "ruff format ."
 help = "Formats code"
 sequence = ["fix-python", "format-python"]
 
+[tasks.integration-test-pyvoy]
+help = "Run the pyvoy unit tests"
+deps = ["build"]
+sequence = [
+  { script = "scripts.setup_it:setup('pyvoy', 'chokoswitch/pyvoy', '835afe6168a07edae3880650a434c0697527e546')" },
+  { cmd = "uv add ../../..", cwd = "out/integration/pyvoy" },
+  # Make sure the pyvoy venv isn't used by specifying uv run.
+  { cmd = "uv run poe test", cwd = "out/integration/pyvoy" },
+]
+
 [tasks.lint-python]
 help = "Lints python code"
 cmd = "ruff check ."
