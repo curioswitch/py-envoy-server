@@ -36,9 +36,12 @@ jobs:
       - uses: ./.github/actions/build-windows
         with:
           version: ${{ steps.envoy-version.outputs.version }}
-          patch: .github/actions/build-windows/v1.37.patch
+          patch: .github/actions/build-windows/v1.38.patch
 
       - name: run tests
-        run: uv run poe test -s
+        run: uv run poe test
 
       - run: uv run poe build
+
+      - name: run pyvoy tests on push
+        run: uv run poe integration-test-pyvoy
