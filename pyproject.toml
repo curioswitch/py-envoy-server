@@ -4,6 +4,7 @@ version = "1.38.0"
 description = "A Python wheel distribution of the Envoy server"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "CurioSwitch" }]
 keywords = ["envoy"]
@@ -11,7 +12,6 @@ classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
@@ -27,6 +27,15 @@ classifiers = [
   "Topic :: System :: Networking",
 ]
 
+[project.urls]
+Changelog = "https://github.com/curioswitch/py-envoy-server/releases"
+Homepage = "https://github.com/curioswitch/py-envoy-server"
+Issues = "https://github.com/curioswitch/py-envoy-server/issues"
+Repository = "https://github.com/curioswitch/py-envoy-server.git"
+
+[project.scripts]
+envoy = "envoy._main:main"
+
 [dependency-groups]
 dev = [
   "httpx",
@@ -38,15 +47,6 @@ dev = [
   "toml",
   "wheel",
 ]
-
-[project.urls]
-Changelog = "https://github.com/curioswitch/py-envoy-server/releases"
-Homepage = "https://github.com/curioswitch/py-envoy-server"
-Issues = "https://github.com/curioswitch/py-envoy-server/issues"
-Repository = "https://github.com/curioswitch/py-envoy-server.git"
-
-[project.scripts]
-envoy = "envoy._main:main"
 
 [build-system]
 requires = ["uv_build>=0.11.6,<0.12.0"]
