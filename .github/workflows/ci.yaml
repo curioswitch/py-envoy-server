@@ -40,7 +40,7 @@ jobs:
         run: uv run poe test
 
       - name: run pyvoy tests on push
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: uv run poe integration-test-pyvoy
 
       - run: uv run poe unix-wheels
