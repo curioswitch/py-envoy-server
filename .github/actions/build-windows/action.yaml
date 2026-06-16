@@ -71,6 +71,7 @@ runs:
           --action_env=PATH `
           --action_env=BAZEL_LINKLIBS= `
           --action_env=BAZEL_LINKOPTS= `
+          --action_env=CMAKE_POLICY_VERSION_MINIMUM=3.5 `
           --noincompatible_strict_action_env `
           --enable_runfiles=yes `
           --features=compiler_param_file `
