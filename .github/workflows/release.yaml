@@ -35,12 +35,15 @@ jobs:
 
       - id: envoy-version
         shell: bash
-        run: echo "version=$(uv run poe print-envoy-version)" >> $GITHUB_OUTPUT
+        run: |
+          version="$(uv run poe print-envoy-version)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "minor_version=${version%.*}" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/build-windows
         with:
           version: ${{ steps.envoy-version.outputs.version }}
-          patch: .github/actions/build-windows/v1.37.patch
+          patch: .github/actions/build-windows/${{ steps.envoy-version.outputs.minor_version }}.patch
 
       - name: Build wheel
         run: uv run poe build
