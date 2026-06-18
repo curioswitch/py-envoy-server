@@ -422,6 +422,19 @@ index 6f38a06858..ac529be3b6 100644
    const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
+diff --git a/source/common/common/thread.h b/source/common/common/thread.h
+index 3eef471757..3940dae23d 100644
+--- a/source/common/common/thread.h
++++ b/source/common/common/thread.h
+@@ -236,6 +236,8 @@ public:
+    * is not supported.
+    */
+   static bool isMainOrTestThread() { return isMainThread() || TestThread::isTestThread(); }
++#else
++  static bool isMainOrTestThread() { return isMainThread(); }
+ #endif
+ 
+   /**
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
 index e53b161d14..08553c800e 100644
 --- a/source/common/common/win32/thread_impl.cc
@@ -554,22 +567,6 @@ index 14bd8498dd..44be98e9f0 100644
  #include "envoy/event/signal.h"
  
  #include "source/common/common/win32/event_logger_impl.h"
-diff --git a/source/extensions/access_loggers/dynamic_modules/access_log.cc b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-index 9cdc1bc3d8..4aecfab501 100644
---- a/source/extensions/access_loggers/dynamic_modules/access_log.cc
-+++ b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-@@ -31,7 +31,11 @@ DynamicModuleAccessLog::DynamicModuleAccessLog(AccessLog::FilterPtr&& filter,
- 
-   tls_slot_->set([config](Event::Dispatcher& dispatcher) {
-     uint32_t worker_index;
-+#if TEST_THREAD_SUPPORTED
-     if (Envoy::Thread::MainThread::isMainOrTestThread()) {
-+#else
-+    if (Envoy::Thread::MainThread::isMainThread()) {
-+#endif
-       auto context = Server::Configuration::ServerFactoryContextInstance::getExisting();
-       auto concurrency = context->options().concurrency();
-       worker_index = concurrency; // Set main/test thread on free index.
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
