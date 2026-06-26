@@ -256,7 +256,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index fe3975e61a..c9b534a448 100644
+index ecbff734e0..31155c0c2e 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -297,7 +297,7 @@ index fe3975e61a..c9b534a448 100644
      _libmaxminddb()
      _thrift()
  
-@@ -922,7 +930,10 @@ def _luajit():
+@@ -924,7 +932,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -309,7 +309,7 @@ index fe3975e61a..c9b534a448 100644
          patch_args = ["-p1"],
      )
  
-@@ -1060,3 +1071,9 @@ def _libmaxminddb():
+@@ -1066,3 +1077,9 @@ def _libmaxminddb():
          name = "libmaxminddb",
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
@@ -320,7 +320,7 @@ index fe3975e61a..c9b534a448 100644
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 22adda19b8..eee755548d 100644
+index 2aaf415054..3e7fc0b107 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -585,7 +585,7 @@ index 5b769c38d1..ea44029ba4 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-index 94ea12ce05..e66dd0bf40 100644
+index 85d17764b3..fbf8fe5a06 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 @@ -1,8 +1,13 @@
@@ -603,7 +603,7 @@ index 94ea12ce05..e66dd0bf40 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index cca8445431..27d8862a0e 100644
+index c227131a69..6348946710 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -77,9 +77,10 @@ void ReverseConnectionIOHandle::cleanup() {
@@ -719,7 +719,7 @@ index cca8445431..27d8862a0e 100644
        }
      }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index baadc5a930..81c00f08ff 100644
+index e88c9cfd63..ed4ac29cb3 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 @@ -223,7 +223,7 @@ public:
@@ -764,7 +764,7 @@ index 64711ca549..df36762a37 100644
  #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index becd8da190..e5634f6958 100644
+index 817d5fd999..260abd8e44 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 @@ -1,7 +1,5 @@
@@ -776,7 +776,7 @@ index becd8da190..e5634f6958 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 32d09bba1f..2d067c2373 100644
+index d456041b76..1fbb3c98b4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 @@ -423,7 +423,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
@@ -805,7 +805,7 @@ index d9c675684f..1fe46155c4 100644
  #include <cstdint>
  #include <list>
 diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
-index 5646867d9b..b6e192f86d 100644
+index 8b734732cf..61ec049feb 100644
 --- a/source/extensions/clusters/dynamic_modules/cluster.cc
 +++ b/source/extensions/clusters/dynamic_modules/cluster.cc
 @@ -178,7 +178,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
@@ -818,7 +818,7 @@ index 5646867d9b..b6e192f86d 100644
        cluster->server_initialized_handle_.reset();
        cluster->shutdown_handle_.reset();
 diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
-index 2e02f675d7..0874484f5f 100644
+index 6e68fde06f..2a434508f2 100644
 --- a/source/extensions/clusters/reverse_connection/reverse_connection.h
 +++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
 @@ -1,8 +1,13 @@
@@ -836,7 +836,7 @@ index 2e02f675d7..0874484f5f 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
-index ef910284b0..c95be7697b 100644
+index be69a93da5..fe5caa2ce0 100644
 --- a/source/extensions/common/aws/BUILD
 +++ b/source/extensions/common/aws/BUILD
 @@ -76,6 +76,7 @@ envoy_cc_library(
@@ -1024,10 +1024,10 @@ index 96ef02f7b0..4796a7a80c 100644
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index c22a2b1e71..d26bae569b 100644
+index ef2eba32a8..482f143aeb 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -799,8 +799,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -901,8 +901,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
@@ -1042,17 +1042,17 @@ index c22a2b1e71..d26bae569b 100644
      // field.
    } else if (!session_id.ok()) {
 diff --git a/source/server/BUILD b/source/server/BUILD
-index 662cdb5123..7644c5e0e9 100644
+index 86d676c17c..ab3d51d1ab 100644
 --- a/source/server/BUILD
 +++ b/source/server/BUILD
-@@ -239,6 +239,7 @@ envoy_cc_library(
+@@ -240,6 +240,7 @@ envoy_cc_library(
          "//envoy/filesystem:filesystem_interface",
          "//source/common/common:logger_lib",
          "//source/common/filesystem:filesystem_lib",
 +        "//source/common/singleton:threadsafe_singleton",
          "@abseil-cpp//absl/strings",
-         "@abseil-cpp//absl/types:optional",
      ],
+ )
 diff --git a/tools/windows/BUILD b/tools/windows/BUILD
 new file mode 100644
 index 0000000000..7ddee365b9
