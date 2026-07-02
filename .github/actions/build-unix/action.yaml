@@ -1,0 +1,67 @@
+name: Build Unix Envoy
+description: Build Envoy for Linux or macOS using Bazel
+
+inputs:
+  version:
+    description: "Envoy version to build"
+    required: true
+  repository:
+    description: "GitHub repository to clone Envoy from"
+    required: false
+    default: "envoyproxy/envoy"
+  patch:
+    description: "Patch file to apply before building"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.version }}
+        path: out/envoy-build
+
+    - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+      with:
+        disk-cache: ${{ inputs.version }}
+        repository-cache: true
+
+    - shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        printf 'machine github.com\nlogin x-access-token\npassword %s\n' "${GITHUB_TOKEN}" >> ~/.netrc
+        printf 'machine codeload.github.com\nlogin x-access-token\npassword %s\n' "${GITHUB_TOKEN}" >> ~/.netrc
+        chmod 600 ~/.netrc
+
+    - name: Apply patches
+      shell: bash
+      if: ${{ inputs.patch != '' }}
+      run: |
+        cp ${{ inputs.patch }} out/envoy-build/fixes.patch
+        cd out/envoy-build
+        git apply fixes.patch
+
+    - name: build envoy
+      working-directory: out/envoy-build
+      shell: bash
+      run: |
+        ARGS=(
+          --compilation_mode=opt
+          --curses=no
+          --verbose_failures
+        )
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          ARGS+=("--linkopt=-Wl,-framework,SystemConfiguration")
+        fi
+        bazel build "${ARGS[@]}" //source/exe:envoy-static
+        mkdir -p "$GITHUB_WORKSPACE/envoy/_bin"
+        cp bazel-bin/source/exe/envoy-static "$GITHUB_WORKSPACE/envoy/_bin/envoy"
+        chmod +x "$GITHUB_WORKSPACE/envoy/_bin/envoy"
+
+    - name: debug envoy
+      working-directory: out/envoy-build
+      shell: bash
+      run: ./bazel-bin/source/exe/envoy-static --version
