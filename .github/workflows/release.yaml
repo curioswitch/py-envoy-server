@@ -11,19 +11,35 @@ permissions:
 
 jobs:
   build-unix:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+          - macos-15
     environment: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
+      - id: envoy-version
+        shell: bash
+        run: echo "version=$(uv run poe print-envoy-version)" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/build-unix
+        with:
+          version: ${{ steps.envoy-version.outputs.version }}
+          patch: .github/actions/build-unix/v1.38.3.patch
+
       - name: Build wheels
-        run: uv run poe unix-wheels
+        run: uv run poe build --prebuilt
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: unix-wheels
+          name: unix-wheels-${{ matrix.runner }}
           path: dist/
 
   build-windows:
@@ -46,7 +62,7 @@ jobs:
           patch: .github/actions/build-windows/${{ steps.envoy-version.outputs.minor_version }}.patch
 
       - name: Build wheel
-        run: uv run poe build
+        run: uv run poe build --prebuilt
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
