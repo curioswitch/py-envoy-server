@@ -43,7 +43,12 @@ runs:
         sudo apt-get update -q
         sudo apt-get install -y lld
         sudo ln -sf "$(command -v ld.lld)" /usr/bin/ld
-        sudo ln -sf "/usr/lib/$(uname -m)-linux-gnu/libtinfo.so.6" "/usr/lib/$(uname -m)-linux-gnu/libtinfo.so.5"
+        sudo rm -f "/usr/lib/$(uname -m)-linux-gnu/libtinfo.so.5"
+        if [ "$(uname -m)" = "x86_64" ]; then
+          echo "deb http://archive.ubuntu.com/ubuntu jammy main universe" | sudo tee /etc/apt/sources.list.d/jammy.list
+          sudo apt-get update -q
+          sudo apt-get install -y libtinfo5
+        fi
 
     - name: Apply patches
       shell: bash
