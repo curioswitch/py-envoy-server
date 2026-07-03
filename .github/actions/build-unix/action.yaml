@@ -74,7 +74,7 @@ runs:
         bazel build "${ARGS[@]}" //source/exe:envoy-static
         mkdir -p "$GITHUB_WORKSPACE/envoy/_bin"
         cp bazel-bin/source/exe/envoy-static "$GITHUB_WORKSPACE/envoy/_bin/envoy"
-        chmod +x "$GITHUB_WORKSPACE/envoy/_bin/envoy"
+        chmod 755 "$GITHUB_WORKSPACE/envoy/_bin/envoy"
         if [ "$RUNNER_OS" = "macOS" ]; then
           strip -x "$GITHUB_WORKSPACE/envoy/_bin/envoy"
         else
