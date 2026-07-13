@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index b828c3e33e..8014012d5a 100644
+index 62c3cb5a74..cfe25300ee 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -81,6 +81,15 @@ genrule(
@@ -96,7 +96,7 @@ index 475a27afd9..4e70939377 100644
  )
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index f6b7b202af..0d891b521f 100644
+index 0fa1100daa..7ea2e6fd06 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -107,7 +107,7 @@ index f6b7b202af..0d891b521f 100644
      targets = ["install"],
  )
  
-@@ -103,7 +104,10 @@ cc_library(
+@@ -177,7 +178,10 @@ cc_library(
  
  configure_make(
      name = "luajit",
@@ -119,7 +119,7 @@ index f6b7b202af..0d891b521f 100644
      env = select({
          # This shouldn't be needed! See
          # https://github.com/envoyproxy/envoy/issues/6084
-@@ -404,6 +408,29 @@ envoy_cmake(
+@@ -478,6 +482,29 @@ envoy_cmake(
      tags = ["skip_on_windows"],
  )
  
@@ -256,7 +256,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 93f37d15d5..caaf0045cc 100644
+index 38ada73e09..4deb4671d3 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -289,7 +289,7 @@ index 93f37d15d5..caaf0045cc 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -240,6 +247,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -242,6 +249,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -297,7 +297,7 @@ index 93f37d15d5..caaf0045cc 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -931,7 +939,10 @@ def _luajit():
+@@ -945,7 +953,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -309,7 +309,7 @@ index 93f37d15d5..caaf0045cc 100644
          patch_args = ["-p1"],
      )
  
-@@ -1074,6 +1085,12 @@ def _libmaxminddb():
+@@ -1088,6 +1099,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -323,10 +323,10 @@ index 93f37d15d5..caaf0045cc 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 4c4197c476..b3a98753b0 100644
+index ce39577cf6..a56d4ac6c6 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -686,6 +686,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -353,7 +353,7 @@ index 4c4197c476..b3a98753b0 100644
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
-index 582520960f..c2d18e3512 100644
+index 6b0eaf6c61..c103f04d64 100644
 --- a/envoy/api/os_sys_calls.h
 +++ b/envoy/api/os_sys_calls.h
 @@ -1,6 +1,9 @@
@@ -366,10 +366,18 @@ index 582520960f..c2d18e3512 100644
  #include <sys/stat.h>
  
  #include <chrono>
-@@ -13,6 +16,14 @@
+@@ -10,12 +13,20 @@
+ #include <string>
+ #include <vector>
+ 
++#include "absl/strings/string_view.h"
++
+ #include "envoy/api/os_sys_calls_common.h"
+ #include "envoy/common/platform.h"
  #include "envoy/common/pure.h"
  #include "envoy/network/address.h"
  
+-#include "absl/strings/string_view.h"
 +#ifdef _WIN32
 +struct rlimit {
 +  int rlim_cur;
@@ -377,10 +385,9 @@ index 582520960f..c2d18e3512 100644
 +};
 +#define RLIMIT_NOFILE 7
 +#endif // _WIN32
-+
+ 
  namespace Envoy {
  namespace Api {
- 
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
 index 91721d3f87..b7e60b61cd 100644
 --- a/envoy/common/platform.h
@@ -606,10 +613,10 @@ index 85d17764b3..fbf8fe5a06 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 8b9d293608..131a9e6605 100644
+index 9ce27c52dd..b56a196aff 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-@@ -95,9 +95,10 @@ void ReverseConnectionIOHandle::cleanup() {
+@@ -102,9 +102,10 @@ void ReverseConnectionIOHandle::cleanup() {
                   "reverse_tunnel: cleaning up trigger pipe; "
                   "trigger_pipe_write_fd_={}, trigger_pipe_read_fd_={}",
                   trigger_pipe_write_fd_, trigger_pipe_read_fd_);
@@ -623,7 +630,7 @@ index 8b9d293608..131a9e6605 100644
    }
  
    // If initializeFileEvent() ran, fd_ was reassigned to trigger_pipe_read_fd_ and the base class
-@@ -174,8 +175,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
+@@ -181,8 +182,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
  
    // Replace the monitored FD with pipe read FD
    // This must happen before any event registration.
@@ -634,7 +641,7 @@ index 8b9d293608..131a9e6605 100644
      ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
      fd_ = trigger_fd;
    }
-@@ -201,7 +202,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+@@ -208,7 +209,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
    ENVOY_LOG(debug, "reverse_tunnel: accept() called");
    if (isTriggerPipeReady()) {
      char trigger_byte;
@@ -645,7 +652,7 @@ index 8b9d293608..131a9e6605 100644
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "reverse_tunnel: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -376,7 +379,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -383,7 +386,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "reverse_tunnel: event: {}", static_cast<int>(event));
  }
  
@@ -654,7 +661,7 @@ index 8b9d293608..131a9e6605 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1058,30 +1061,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1093,30 +1096,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -701,7 +708,7 @@ index 8b9d293608..131a9e6605 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(
-@@ -1219,14 +1224,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
+@@ -1254,14 +1259,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
        // Trigger accept mechanism safely.
        if (isTriggerPipeReady()) {
          char trigger_byte = 1;
@@ -722,7 +729,7 @@ index 8b9d293608..131a9e6605 100644
        }
      }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index c3aefb1e75..c3b56eee0e 100644
+index 59501e2114..f0243bea0b 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 @@ -225,7 +225,7 @@ public:
@@ -734,7 +741,7 @@ index c3aefb1e75..c3b56eee0e 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -471,8 +471,8 @@ private:
+@@ -505,8 +505,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -745,7 +752,7 @@ index c3aefb1e75..c3b56eee0e 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -487,7 +487,7 @@ private:
+@@ -521,7 +521,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -767,7 +774,7 @@ index 64711ca549..df36762a37 100644
  #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index 817d5fd999..260abd8e44 100644
+index 908ff69156..b31fb2f6bb 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 @@ -1,7 +1,5 @@
@@ -779,10 +786,10 @@ index 817d5fd999..260abd8e44 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 6f71f10ba6..030493d376 100644
+index 10200293f6..0de998f5d5 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -423,7 +423,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+@@ -428,7 +428,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
      // Found in idle pool — erase from list and clean up timers/events.
      ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
                node_id, cluster_id, fd);
@@ -796,7 +803,7 @@ index 6f71f10ba6..030493d376 100644
      fd_to_socket_it_map_.erase(socket_it);
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-index d9c675684f..1fe46155c4 100644
+index 5a078acdac..bdf5eaebca 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 @@ -1,7 +1,5 @@
@@ -808,10 +815,10 @@ index d9c675684f..1fe46155c4 100644
  #include <cstdint>
  #include <list>
 diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
-index 8b734732cf..61ec049feb 100644
+index e4f0aaac9e..e0c34c26be 100644
 --- a/source/extensions/clusters/dynamic_modules/cluster.cc
 +++ b/source/extensions/clusters/dynamic_modules/cluster.cc
-@@ -178,7 +178,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
+@@ -184,7 +184,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
    Event::Dispatcher& dispatcher = cluster->dispatcher_;
    // The lifecycle handle resets unregister from main-thread-owned notifiers. When the handle is
    // destroyed on a worker thread, post the full teardown onto the main dispatcher.
@@ -821,7 +828,7 @@ index 8b734732cf..61ec049feb 100644
        cluster->server_initialized_handle_.reset();
        cluster->shutdown_handle_.reset();
 diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
-index 6e68fde06f..2a434508f2 100644
+index 575d09b5fa..ac497d95ec 100644
 --- a/source/extensions/clusters/reverse_connection/reverse_connection.h
 +++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
 @@ -1,8 +1,13 @@
@@ -1027,10 +1034,10 @@ index 96ef02f7b0..4796a7a80c 100644
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index 06113a6bd4..73bb55ef25 100644
+index 463a74c2e7..56965a1727 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -913,8 +913,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -1098,8 +1098,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
