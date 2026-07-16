@@ -1,8 +1,8 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index d468e227d5..e1e337abb2 100644
+index 62c3cb5a74..cfe25300ee 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -71,6 +71,15 @@ genrule(
+@@ -81,6 +81,15 @@ genrule(
      stamp = 1,
  )
  
@@ -96,7 +96,7 @@ index 475a27afd9..4e70939377 100644
  )
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index f6b7b202af..0d891b521f 100644
+index 1b64c55f40..7b0a110c85 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -107,7 +107,7 @@ index f6b7b202af..0d891b521f 100644
      targets = ["install"],
  )
  
-@@ -103,7 +104,10 @@ cc_library(
+@@ -177,7 +178,10 @@ cc_library(
  
  configure_make(
      name = "luajit",
@@ -119,7 +119,7 @@ index f6b7b202af..0d891b521f 100644
      env = select({
          # This shouldn't be needed! See
          # https://github.com/envoyproxy/envoy/issues/6084
-@@ -404,6 +408,29 @@ envoy_cmake(
+@@ -479,6 +483,29 @@ envoy_cmake(
      tags = ["skip_on_windows"],
  )
  
@@ -150,7 +150,7 @@ index f6b7b202af..0d891b521f 100644
      name = "maxmind",
      build_args = select({
 diff --git a/bazel/foreign_cc/cel-cpp.patch b/bazel/foreign_cc/cel-cpp.patch
-index f1c51df8e9..82f5d8e792 100644
+index b40b2779d7..e7276c1b0b 100644
 --- a/bazel/foreign_cc/cel-cpp.patch
 +++ b/bazel/foreign_cc/cel-cpp.patch
 @@ -1,3 +1,15 @@
@@ -255,75 +255,8 @@ index f204c7089a..d522f9cb24 100644
 +        "@bazel_tools//tools/cpp:clang-cl",
 +    ],
 +)
-diff --git a/bazel/repo.bzl b/bazel/repo.bzl
-index 561c99b71c..0637053dd4 100644
---- a/bazel/repo.bzl
-+++ b/bazel/repo.bzl
-@@ -65,25 +65,45 @@ def _envoy_repo_impl(repository_ctx):
- 
-     """
- 
--    # parse container information for use in RBE
--    json_result = repository_ctx.execute([
--        repository_ctx.path(repository_ctx.attr.yq),
--        repository_ctx.path(repository_ctx.attr.envoy_ci_config),
--        "-ojson",
--    ])
--    if json_result.return_code != 0:
--        fail("yq failed: {}".format(json_result.stderr))
--    repository_ctx.file("ci-config.json", json_result.stdout)
--    config_data = json.decode(repository_ctx.read("ci-config.json"))
-+    repo = ""
-+    repo_gcr = ""
-+    sha = ""
-+    sha_gcc = ""
-+    sha_mobile = ""
-+    sha_worker = ""
-+    tag = ""
-+
-+    # yq via bazel doesn't work on Windows, but we don't need the real flag_values
-+    # there either. For this and other reasons, ideally we could parse YAML directly.
-+    # https://github.com/bazelbuild/bazel/issues/24766
-+    if repository_ctx.os.name.lower().find("windows") == -1:
-+        json_result = repository_ctx.execute([
-+            repository_ctx.path(repository_ctx.attr.yq),
-+            repository_ctx.path(repository_ctx.attr.envoy_ci_config),
-+            "-ojson",
-+        ])
-+        if json_result.return_code != 0:
-+            fail("yq failed: {}".format(json_result.stderr))
-+        repository_ctx.file("ci-config.json", json_result.stdout)
-+        config_data = json.decode(repository_ctx.read("ci-config.json"))
-+        repo = config_data["build-image"]["repo"]
-+        repo_gcr = config_data["build-image"]["repo-gcr"]
-+        sha = config_data["build-image"]["sha"]
-+        sha_gcc = config_data["build-image"]["sha-gcc"]
-+        sha_mobile = config_data["build-image"]["sha-mobile"]
-+        sha_worker = config_data["build-image"]["sha-worker"]
-+        tag = config_data["build-image"]["tag"]
-+
-     repository_ctx.file("containers.bzl", CONTAINERS.format(
--        repo = config_data["build-image"]["repo"],
--        repo_gcr = config_data["build-image"]["repo-gcr"],
--        sha = config_data["build-image"]["sha"],
--        sha_gcc = config_data["build-image"]["sha-gcc"],
--        sha_mobile = config_data["build-image"]["sha-mobile"],
--        sha_worker = config_data["build-image"]["sha-worker"],
--        tag = config_data["build-image"]["tag"],
-+        repo = repo,
-+        repo_gcr = repo_gcr,
-+        sha = sha,
-+        sha_gcc = sha_gcc,
-+        sha_mobile = sha_mobile,
-+        sha_worker = sha_worker,
-+        tag = tag,
-     ))
-+
-     repo_version_path = repository_ctx.path(repository_ctx.attr.envoy_version)
-     api_version_path = repository_ctx.path(repository_ctx.attr.envoy_api_version)
-     version = repository_ctx.read(repo_version_path).strip()
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index f77d973161..ae82172a92 100644
+index 38ada73e09..4deb4671d3 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -356,15 +289,15 @@ index f77d973161..ae82172a92 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -238,6 +245,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -242,6 +249,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
 +    _com_github_dlfcn_win32()
      _libmaxminddb()
      _thrift()
- 
-@@ -901,7 +909,10 @@ def _luajit():
+     _wuffs()
+@@ -945,7 +953,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -376,21 +309,24 @@ index f77d973161..ae82172a92 100644
          patch_args = ["-p1"],
      )
  
-@@ -1036,3 +1047,9 @@ def _libmaxminddb():
-         name = "libmaxminddb",
+@@ -1088,6 +1099,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
-+
+ 
 +def _com_github_dlfcn_win32():
 +    external_http_archive(
 +        name = "com_github_dlfcn_win32",
 +        build_file_content = BUILD_ALL_CONTENT,
 +    )
++
+ def _wuffs():
+     external_http_archive(
+         name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 2cc07f4ba1..12f308970a 100644
+index 80d6efbd26..3c49794377 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -676,6 +676,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -416,8 +352,32 @@ index 2cc07f4ba1..12f308970a 100644
      libmaxminddb = dict(
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
+diff --git a/envoy/api/BUILD b/envoy/api/BUILD
+index a1f63d0329..207373783f 100644
+--- a/envoy/api/BUILD
++++ b/envoy/api/BUILD
+@@ -31,6 +31,7 @@ envoy_cc_library(
+     name = "io_error_interface",
+     hdrs = ["io_error.h"],
+     deps = [
++        "//envoy/common:base_includes",
+         "//envoy/common:pure_lib",
+     ],
+ )
+diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
+index 8261b9a6b0..15a8cbd557 100644
+--- a/envoy/api/io_error.h
++++ b/envoy/api/io_error.h
+@@ -5,6 +5,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "envoy/common/platform.h"
+ #include "envoy/common/pure.h"
+ 
+ namespace Envoy {
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
-index 08f2227c4f..85f6c25af3 100644
+index 6b0eaf6c61..c103f04d64 100644
 --- a/envoy/api/os_sys_calls.h
 +++ b/envoy/api/os_sys_calls.h
 @@ -1,6 +1,9 @@
@@ -430,10 +390,18 @@ index 08f2227c4f..85f6c25af3 100644
  #include <sys/stat.h>
  
  #include <chrono>
-@@ -13,6 +16,14 @@
+@@ -10,12 +13,20 @@
+ #include <string>
+ #include <vector>
+ 
++#include "absl/strings/string_view.h"
++
+ #include "envoy/api/os_sys_calls_common.h"
+ #include "envoy/common/platform.h"
  #include "envoy/common/pure.h"
  #include "envoy/network/address.h"
  
+-#include "absl/strings/string_view.h"
 +#ifdef _WIN32
 +struct rlimit {
 +  int rlim_cur;
@@ -441,10 +409,9 @@ index 08f2227c4f..85f6c25af3 100644
 +};
 +#define RLIMIT_NOFILE 7
 +#endif // _WIN32
-+
+ 
  namespace Envoy {
  namespace Api {
- 
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
 index 91721d3f87..b7e60b61cd 100644
 --- a/envoy/common/platform.h
@@ -465,10 +432,10 @@ index 91721d3f87..b7e60b61cd 100644
  // Posix structure for describing messages sent by 'sendmsg` and received by
  // 'recvmsg'
 diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
-index 6f38a06858..ac529be3b6 100644
+index 1e932c27bb..2d0cf4ad8b 100644
 --- a/source/common/api/win32/os_sys_calls_impl.cc
 +++ b/source/common/api/win32/os_sys_calls_impl.cc
-@@ -244,20 +244,12 @@ SysCallIntResult OsSysCallsImpl::fstat(os_fd_t fd, struct stat* buf) {
+@@ -249,20 +249,12 @@ SysCallIntResult OsSysCallsImpl::fstat(os_fd_t fd, struct stat* buf) {
  
  SysCallIntResult OsSysCallsImpl::setsockopt(os_fd_t sockfd, int level, int optname,
                                              const void* optval, socklen_t optlen) {
@@ -489,6 +456,19 @@ index 6f38a06858..ac529be3b6 100644
    const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
+diff --git a/source/common/common/thread.h b/source/common/common/thread.h
+index 3eef471757..3940dae23d 100644
+--- a/source/common/common/thread.h
++++ b/source/common/common/thread.h
+@@ -236,6 +236,8 @@ public:
+    * is not supported.
+    */
+   static bool isMainOrTestThread() { return isMainThread() || TestThread::isTestThread(); }
++#else
++  static bool isMainOrTestThread() { return isMainThread(); }
+ #endif
+ 
+   /**
 diff --git a/source/common/common/win32/thread_impl.cc b/source/common/common/win32/thread_impl.cc
 index e53b161d14..08553c800e 100644
 --- a/source/common/common/win32/thread_impl.cc
@@ -569,10 +549,10 @@ index 2e7c0e7243..218ea50778 100644
          // write a byte to the other end of the socket that libevent is watching
          // this tells the libevent callback to pull this callback off the active_callbacks_
 diff --git a/source/common/memory/aligned_allocator.h b/source/common/memory/aligned_allocator.h
-index f45e7f74b2..f715987527 100644
+index 94cb5b14d8..f1dc585543 100644
 --- a/source/common/memory/aligned_allocator.h
 +++ b/source/common/memory/aligned_allocator.h
-@@ -45,6 +45,8 @@ public:
+@@ -46,6 +46,8 @@ public:
        return nullptr;
      }
      return static_cast<T*>(ptr);
@@ -581,7 +561,7 @@ index f45e7f74b2..f715987527 100644
  #else
      // Ensure bytes is a multiple of Alignment, which is required by std::aligned_alloc.
      bytes = round_up_to_alignment(bytes);
-@@ -56,6 +58,8 @@ public:
+@@ -57,6 +59,8 @@ public:
      if (p != nullptr) {
  #ifdef ALIGNED_ALLOCATOR_USE_POSIX_MEMALIGN
        free(p);
@@ -621,22 +601,6 @@ index 14bd8498dd..44be98e9f0 100644
  #include "envoy/event/signal.h"
  
  #include "source/common/common/win32/event_logger_impl.h"
-diff --git a/source/extensions/access_loggers/dynamic_modules/access_log.cc b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-index 6b47bc3e8b..ad2f007707 100644
---- a/source/extensions/access_loggers/dynamic_modules/access_log.cc
-+++ b/source/extensions/access_loggers/dynamic_modules/access_log.cc
-@@ -29,7 +29,11 @@ DynamicModuleAccessLog::DynamicModuleAccessLog(AccessLog::FilterPtr&& filter,
- 
-   tls_slot_->set([config](Event::Dispatcher& dispatcher) {
-     uint32_t worker_index;
-+#if TEST_THREAD_SUPPORTED
-     if (Envoy::Thread::MainThread::isMainOrTestThread()) {
-+#else
-+    if (Envoy::Thread::MainThread::isMainThread()) {
-+#endif
-       auto context = Server::Configuration::ServerFactoryContextInstance::getExisting();
-       auto concurrency = context->options().concurrency();
-       worker_index = concurrency; // Set main/test thread on free index.
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
@@ -655,7 +619,7 @@ index 5b769c38d1..ea44029ba4 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-index 94ea12ce05..e66dd0bf40 100644
+index 85d17764b3..fbf8fe5a06 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
 @@ -1,8 +1,13 @@
@@ -673,39 +637,24 @@ index 94ea12ce05..e66dd0bf40 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index b10e408fc7..a4e3203738 100644
+index 9ce27c52dd..b56a196aff 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-@@ -10,6 +10,7 @@
- #include "envoy/network/connection.h"
- #include "envoy/upstream/cluster_manager.h"
- 
-+#include "source/common/api/os_sys_calls_impl.h"
- #include "source/common/buffer/buffer_impl.h"
- #include "source/common/common/logger.h"
- #include "source/common/event/real_time_system.h"
-@@ -63,13 +64,14 @@ void ReverseConnectionIOHandle::cleanup() {
+@@ -102,9 +102,10 @@ void ReverseConnectionIOHandle::cleanup() {
                   "reverse_tunnel: cleaning up trigger pipe; "
                   "trigger_pipe_write_fd_={}, trigger_pipe_read_fd_={}",
                   trigger_pipe_write_fd_, trigger_pipe_read_fd_);
 -  if (trigger_pipe_write_fd_ >= 0) {
--    ::close(trigger_pipe_write_fd_);
+-    Api::OsSysCallsSingleton::get().close(trigger_pipe_write_fd_);
 -    trigger_pipe_write_fd_ = -1;
 +  auto& os_sys_calls = Api::OsSysCallsSingleton::get();
 +  if (trigger_pipe_write_fd_ != INVALID_SOCKET) {
 +    os_sys_calls.close(trigger_pipe_write_fd_);
 +    trigger_pipe_write_fd_ = INVALID_SOCKET;
    }
--  if (trigger_pipe_read_fd_ >= 0) {
--    ::close(trigger_pipe_read_fd_);
--    trigger_pipe_read_fd_ = -1;
-+  if (trigger_pipe_read_fd_ != INVALID_SOCKET) {
-+    os_sys_calls.close(trigger_pipe_read_fd_);
-+    trigger_pipe_read_fd_ = INVALID_SOCKET;
-   }
  
-   // Cancel the retry timer safely.
-@@ -170,8 +172,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
+   // If initializeFileEvent() ran, fd_ was reassigned to trigger_pipe_read_fd_ and the base class
+@@ -181,8 +182,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
  
    // Replace the monitored FD with pipe read FD
    // This must happen before any event registration.
@@ -716,7 +665,7 @@ index b10e408fc7..a4e3203738 100644
      ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
      fd_ = trigger_fd;
    }
-@@ -197,7 +199,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+@@ -208,7 +209,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
    ENVOY_LOG(debug, "reverse_tunnel: accept() called");
    if (isTriggerPipeReady()) {
      char trigger_byte;
@@ -727,7 +676,7 @@ index b10e408fc7..a4e3203738 100644
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "reverse_tunnel: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -368,7 +372,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -383,7 +386,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "reverse_tunnel: event: {}", static_cast<int>(event));
  }
  
@@ -736,7 +685,7 @@ index b10e408fc7..a4e3203738 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1033,30 +1037,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1093,30 +1096,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -782,8 +731,8 @@ index b10e408fc7..a4e3203738 100644
 +  return trigger_pipe_read_fd_ != INVALID_SOCKET && trigger_pipe_write_fd_ != INVALID_SOCKET;
  }
  
- void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
-@@ -1188,14 +1194,16 @@ void ReverseConnectionIOHandle::onConnectionDone(const std::string& error,
+ void ReverseConnectionIOHandle::onConnectionDone(
+@@ -1254,14 +1259,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
        // Trigger accept mechanism safely.
        if (isTriggerPipeReady()) {
          char trigger_byte = 1;
@@ -804,10 +753,10 @@ index b10e408fc7..a4e3203738 100644
        }
      }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index 49b628620e..e2750c7ff9 100644
+index 59501e2114..f0243bea0b 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-@@ -219,7 +219,7 @@ public:
+@@ -225,7 +225,7 @@ public:
     * Get the file descriptor for the pipe monitor used to wake up accept().
     * @return the file descriptor for the pipe monitor
     */
@@ -816,7 +765,7 @@ index 49b628620e..e2750c7ff9 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -433,8 +433,8 @@ private:
+@@ -505,8 +505,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -827,7 +776,7 @@ index 49b628620e..e2750c7ff9 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -449,7 +449,7 @@ private:
+@@ -521,7 +521,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -837,7 +786,7 @@ index 49b628620e..e2750c7ff9 100644
  
  } // namespace ReverseConnection
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
-index b543752543..fdb98e0624 100644
+index 64711ca549..df36762a37 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
 @@ -1,7 +1,5 @@
@@ -849,7 +798,7 @@ index b543752543..fdb98e0624 100644
  #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index 32717efb16..f2c2ac2994 100644
+index 908ff69156..b31fb2f6bb 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 @@ -1,7 +1,5 @@
@@ -861,10 +810,10 @@ index 32717efb16..f2c2ac2994 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 7ab08bb4f1..e853831d10 100644
+index 10200293f6..0de998f5d5 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -302,7 +302,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+@@ -428,7 +428,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
      // Found in idle pool — erase from list and clean up timers/events.
      ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
                node_id, cluster_id, fd);
@@ -878,7 +827,7 @@ index 7ab08bb4f1..e853831d10 100644
      fd_to_socket_it_map_.erase(socket_it);
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-index f10c3de9c7..575f4e1d13 100644
+index 5a078acdac..bdf5eaebca 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 @@ -1,7 +1,5 @@
@@ -890,10 +839,10 @@ index f10c3de9c7..575f4e1d13 100644
  #include <cstdint>
  #include <list>
 diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
-index d9dbeb177b..5e44c5a4af 100644
+index e4f0aaac9e..e0c34c26be 100644
 --- a/source/extensions/clusters/dynamic_modules/cluster.cc
 +++ b/source/extensions/clusters/dynamic_modules/cluster.cc
-@@ -164,7 +164,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
+@@ -184,7 +184,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
    Event::Dispatcher& dispatcher = cluster->dispatcher_;
    // The lifecycle handle resets unregister from main-thread-owned notifiers. When the handle is
    // destroyed on a worker thread, post the full teardown onto the main dispatcher.
@@ -903,7 +852,7 @@ index d9dbeb177b..5e44c5a4af 100644
        cluster->server_initialized_handle_.reset();
        cluster->shutdown_handle_.reset();
 diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
-index 133d8b5766..dbdd364c67 100644
+index 575d09b5fa..ac497d95ec 100644
 --- a/source/extensions/clusters/reverse_connection/reverse_connection.h
 +++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
 @@ -1,8 +1,13 @@
@@ -921,7 +870,7 @@ index 133d8b5766..dbdd364c67 100644
  #include <cstring>
  #include <functional>
 diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
-index ef910284b0..c95be7697b 100644
+index be69a93da5..fe5caa2ce0 100644
 --- a/source/extensions/common/aws/BUILD
 +++ b/source/extensions/common/aws/BUILD
 @@ -76,6 +76,7 @@ envoy_cc_library(
@@ -933,13 +882,13 @@ index ef910284b0..c95be7697b 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index 663381da6b..8a4c9428de 100644
+index 301e26627d..bfd2188e7f 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
-@@ -19,7 +19,10 @@ envoy_cc_library(
-         "//envoy/common:exception_lib",
-         "//source/common/common:utility_lib",
-         "//source/extensions/dynamic_modules/abi",
+@@ -38,7 +38,10 @@ envoy_cc_library(
+         "@abseil-cpp//absl/container:flat_hash_map",
+         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+         "@envoy_api//envoy/extensions/dynamic_modules/v3:pkg_cc_proto",
 -    ],
 +    ] + select({
 +        "//bazel:windows_x86_64": ["//bazel/foreign_cc:dlfcn_win32"],
@@ -959,7 +908,7 @@ index 10a0e03825..697ca723a3 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index 0a18ef812f..d04f9ed3e2 100644
+index 96ef02f7b0..4796a7a80c 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -1,9 +1,15 @@
@@ -977,10 +926,10 @@ index 0a18ef812f..d04f9ed3e2 100644
 +#include <stdlib.h>
 +#include <sys/stat.h>
 +#endif
+ #include <fstream>
  #include <string>
- 
- #include "envoy/common/exception.h"
-@@ -27,14 +33,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+ #include <system_error>
+@@ -36,14 +42,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -1001,7 +950,7 @@ index 0a18ef812f..d04f9ed3e2 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -44,13 +54,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -53,13 +63,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -1019,7 +968,7 @@ index 0a18ef812f..d04f9ed3e2 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -66,7 +78,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -75,7 +87,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -1028,7 +977,7 @@ index 0a18ef812f..d04f9ed3e2 100644
    }
    // We log a warning if the ABI version does not match exactly.
    if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
-@@ -97,8 +109,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -106,8 +118,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -1043,7 +992,7 @@ index 0a18ef812f..d04f9ed3e2 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -125,7 +143,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByName(const absl::string_view
+@@ -134,7 +152,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
@@ -1052,7 +1001,7 @@ index 0a18ef812f..d04f9ed3e2 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
-@@ -161,7 +179,19 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
+@@ -224,7 +242,19 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
  
    // Write the (already SHA256-verified) bytes to a staging file, then atomically rename.
    std::string staging_template = temp_file_path.string() + ".XXXXXX";
@@ -1073,7 +1022,7 @@ index 0a18ef812f..d04f9ed3e2 100644
    if (fd == -1) {
      return absl::InternalError(absl::StrCat(
          "Failed to create temporary staging file for dynamic module: ", staging_template, ": ",
-@@ -170,20 +200,33 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
+@@ -233,13 +263,22 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
  
    size_t total_written = 0;
    while (total_written < module_bytes.size()) {
@@ -1093,9 +1042,10 @@ index 0a18ef812f..d04f9ed3e2 100644
 +#else
 +      _close(fd);
 +#endif
-       std::filesystem::remove(staging_template);
+       std::error_code cleanup_ec;
+       std::filesystem::remove(staging_template, cleanup_ec);
        return absl::InternalError(
-           absl::StrCat("Failed to write to staging file for dynamic module: ", staging_template));
+@@ -247,7 +286,11 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
      }
      total_written += written;
    }
@@ -1106,12 +1056,12 @@ index 0a18ef812f..d04f9ed3e2 100644
 +#endif
  
    std::filesystem::path staging_path(staging_template);
-   std::filesystem::permissions(staging_path, std::filesystem::perms::owner_all,
+   std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index 770b1f28ea..dea87ba740 100644
+index a9d9f161c8..569b458c4e 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -556,8 +556,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -1099,8 +1099,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
@@ -1126,17 +1076,17 @@ index 770b1f28ea..dea87ba740 100644
      // field.
    } else if (!session_id.ok()) {
 diff --git a/source/server/BUILD b/source/server/BUILD
-index 662cdb5123..7644c5e0e9 100644
+index 86d676c17c..ab3d51d1ab 100644
 --- a/source/server/BUILD
 +++ b/source/server/BUILD
-@@ -239,6 +239,7 @@ envoy_cc_library(
+@@ -240,6 +240,7 @@ envoy_cc_library(
          "//envoy/filesystem:filesystem_interface",
          "//source/common/common:logger_lib",
          "//source/common/filesystem:filesystem_lib",
 +        "//source/common/singleton:threadsafe_singleton",
          "@abseil-cpp//absl/strings",
-         "@abseil-cpp//absl/types:optional",
      ],
+ )
 diff --git a/tools/windows/BUILD b/tools/windows/BUILD
 new file mode 100644
 index 0000000000..7ddee365b9
