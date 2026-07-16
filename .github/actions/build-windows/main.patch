@@ -96,7 +96,7 @@ index 475a27afd9..4e70939377 100644
  )
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index 0fa1100daa..7ea2e6fd06 100644
+index 1b64c55f40..7b0a110c85 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -119,7 +119,7 @@ index 0fa1100daa..7ea2e6fd06 100644
      env = select({
          # This shouldn't be needed! See
          # https://github.com/envoyproxy/envoy/issues/6084
-@@ -478,6 +482,29 @@ envoy_cmake(
+@@ -479,6 +483,29 @@ envoy_cmake(
      tags = ["skip_on_windows"],
  )
  
@@ -323,10 +323,10 @@ index 38ada73e09..4deb4671d3 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index ce39577cf6..a56d4ac6c6 100644
+index 80d6efbd26..3c49794377 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -686,6 +686,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -676,6 +676,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -352,6 +352,30 @@ index ce39577cf6..a56d4ac6c6 100644
      libmaxminddb = dict(
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
+diff --git a/envoy/api/BUILD b/envoy/api/BUILD
+index a1f63d0329..207373783f 100644
+--- a/envoy/api/BUILD
++++ b/envoy/api/BUILD
+@@ -31,6 +31,7 @@ envoy_cc_library(
+     name = "io_error_interface",
+     hdrs = ["io_error.h"],
+     deps = [
++        "//envoy/common:base_includes",
+         "//envoy/common:pure_lib",
+     ],
+ )
+diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
+index 8261b9a6b0..15a8cbd557 100644
+--- a/envoy/api/io_error.h
++++ b/envoy/api/io_error.h
+@@ -5,6 +5,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "envoy/common/platform.h"
+ #include "envoy/common/pure.h"
+ 
+ namespace Envoy {
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 6b0eaf6c61..c103f04d64 100644
 --- a/envoy/api/os_sys_calls.h
@@ -1034,10 +1058,10 @@ index 96ef02f7b0..4796a7a80c 100644
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index 463a74c2e7..56965a1727 100644
+index a9d9f161c8..569b458c4e 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -1098,8 +1098,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -1099,8 +1099,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
