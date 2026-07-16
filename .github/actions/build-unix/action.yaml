@@ -66,7 +66,6 @@ runs:
           --compilation_mode=opt
           --curses=no
           --verbose_failures
-          --define wasm=disabled
         )
         if [ "$RUNNER_OS" = "macOS" ]; then
           ARGS+=("--linkopt=-Wl,-framework,SystemConfiguration")
