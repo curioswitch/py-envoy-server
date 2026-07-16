@@ -36,15 +36,6 @@ runs:
         printf 'machine codeload.github.com\nlogin x-access-token\npassword %s\n' "${GITHUB_TOKEN}" >> ~/.netrc
         chmod 600 ~/.netrc
 
-    - name: Prepare Linux toolchain
-      shell: bash
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update -q
-        sudo apt-get install -y lld
-        sudo ln -sf "$(command -v ld.lld)" /usr/bin/ld
-        sudo ln -sf "/usr/lib/$(uname -m)-linux-gnu/libtinfo.so.6" "/usr/lib/$(uname -m)-linux-gnu/libtinfo.so.5"
-
     - name: Apply patches
       shell: bash
       if: ${{ inputs.patch != '' }}
