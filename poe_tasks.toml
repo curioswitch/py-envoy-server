@@ -1,10 +1,6 @@
 [tasks.build]
 help = "Builds the project for the current platform"
-script = "scripts.build:build(prebuilt=prebuilt)"
-
-[[tasks.build.args]]
-name = "prebuilt"
-type = "boolean"
+script = "scripts.build:build"
 
 [tasks.check]
 help = "Runs all checks"

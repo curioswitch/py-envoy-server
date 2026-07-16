@@ -30,9 +30,7 @@ def _get_envoy_version() -> str:
     return version
 
 
-def build(
-    os: str | None = None, arch: str | None = None, *, prebuilt: bool = False
-) -> None:
+def build(os: str | None = None, arch: str | None = None) -> None:
     if os is None or arch is None:
         machine = platform.machine().lower()
         match machine:
@@ -58,12 +56,7 @@ def build(
         case "win32":
             platform_tag = "win_amd64"
 
-    if prebuilt:
-        # We assume Envoy was built separately on CI.
-        if not envoy_path.exists():
-            msg = f"Envoy binary not found at expected path: {envoy_path}"
-            raise RuntimeError(msg)
-    else:
+    if os != "win32":
         url = f"https://github.com/tetratelabs/archive-envoy/releases/download/{version}/envoy-{version}-{os}-{arch}.tar.xz"
 
         envoy_path.unlink(missing_ok=True)
@@ -79,6 +72,11 @@ def build(
             with envoy_path.open("wb") as f:
                 copyfileobj(envoy_file, f)
         envoy_path.chmod(0o755)
+    else:
+        # We assume Envoy was built separately on CI.
+        if not envoy_path.exists():
+            msg = f"Envoy binary not found at expected path: {envoy_path}"
+            raise RuntimeError(msg)
 
     subprocess.run(["uv", "build", "--wheel"], check=True)
 
