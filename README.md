@@ -1,13 +1,8 @@
 # envoy-server
 
 A Python package containing a runnable [Envoy](https://github.com/envoyproxy/envoy) command.
-
-On platforms supported natively by Envoy, typically glibc Linux or macOS on arm64, the package
-embeds the Envoy binary itself and runs it directly. On other platforms such as Windows, it runs
-the official [Envoy docker image](https://hub.docker.com/r/envoyproxy/envoy) - Docker must be installed
-to run. The Docker fallback is primarily meant for non-production usage, for example when your
-project runs Envoy on Linux in production but should still be runnable on a Windows developer
-machine.
+It supports glibc Linux, macOS on arm64, and Windows on amd64, running an embedded Envoy binary
+directly.
 
 Note, this package is for Python users. If you're not already using Python, you may want to try
 [func-e](https://github.com/tetratelabs/func-e/) instead.
