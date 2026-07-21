@@ -323,7 +323,7 @@ index 38ada73e09..4deb4671d3 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 80d6efbd26..3c49794377 100644
+index 386cc4d1fb..e84b3ae2fc 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -676,6 +676,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -352,32 +352,8 @@ index 80d6efbd26..3c49794377 100644
      libmaxminddb = dict(
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
-diff --git a/envoy/api/BUILD b/envoy/api/BUILD
-index a1f63d0329..207373783f 100644
---- a/envoy/api/BUILD
-+++ b/envoy/api/BUILD
-@@ -31,6 +31,7 @@ envoy_cc_library(
-     name = "io_error_interface",
-     hdrs = ["io_error.h"],
-     deps = [
-+        "//envoy/common:base_includes",
-         "//envoy/common:pure_lib",
-     ],
- )
-diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
-index 8261b9a6b0..15a8cbd557 100644
---- a/envoy/api/io_error.h
-+++ b/envoy/api/io_error.h
-@@ -5,6 +5,7 @@
- #include <string>
- #include <utility>
- 
-+#include "envoy/common/platform.h"
- #include "envoy/common/pure.h"
- 
- namespace Envoy {
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
-index 6b0eaf6c61..c103f04d64 100644
+index 6b0eaf6c61..5485094e9e 100644
 --- a/envoy/api/os_sys_calls.h
 +++ b/envoy/api/os_sys_calls.h
 @@ -1,6 +1,9 @@
@@ -390,18 +366,10 @@ index 6b0eaf6c61..c103f04d64 100644
  #include <sys/stat.h>
  
  #include <chrono>
-@@ -10,12 +13,20 @@
- #include <string>
- #include <vector>
- 
-+#include "absl/strings/string_view.h"
-+
- #include "envoy/api/os_sys_calls_common.h"
- #include "envoy/common/platform.h"
+@@ -15,6 +18,14 @@
  #include "envoy/common/pure.h"
  #include "envoy/network/address.h"
  
--#include "absl/strings/string_view.h"
 +#ifdef _WIN32
 +struct rlimit {
 +  int rlim_cur;
@@ -409,9 +377,10 @@ index 6b0eaf6c61..c103f04d64 100644
 +};
 +#define RLIMIT_NOFILE 7
 +#endif // _WIN32
++
+ #include "absl/strings/string_view.h"
  
  namespace Envoy {
- namespace Api {
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
 index 91721d3f87..b7e60b61cd 100644
 --- a/envoy/common/platform.h
@@ -637,7 +606,7 @@ index 85d17764b3..fbf8fe5a06 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 9ce27c52dd..b56a196aff 100644
+index 68a3fd7b38..c7026365c7 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -102,9 +102,10 @@ void ReverseConnectionIOHandle::cleanup() {
@@ -685,7 +654,7 @@ index 9ce27c52dd..b56a196aff 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1093,30 +1096,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1106,30 +1109,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -732,28 +701,28 @@ index 9ce27c52dd..b56a196aff 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(
-@@ -1254,14 +1259,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
-       // Trigger accept mechanism safely.
-       if (isTriggerPipeReady()) {
-         char trigger_byte = 1;
--        ssize_t bytes_written = ::write(trigger_pipe_write_fd_, &trigger_byte, 1);
--        if (bytes_written == 1) {
-+        auto& os_sys_calls = Api::OsSysCallsSingleton::get();
-+        auto result = os_sys_calls.send(trigger_pipe_write_fd_, &trigger_byte, 1, 0);
-+        if (result.return_value_ == 1) {
-           ENVOY_LOG(info,
-                     "reverse_tunnel: Successfully triggered reverse_conn_listener "
-                     "accept() for host {}",
-                     host_address);
-         } else {
--          ENVOY_LOG(error, "reverse_tunnel: Failed to write trigger byte: {}", errorDetails(errno));
-+          ENVOY_LOG(error, "reverse_tunnel: Failed to write trigger byte: {}",
-+                    errorDetails(result.errno_));
-         }
+@@ -1257,14 +1262,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
+     // Trigger accept mechanism safely.
+     if (isTriggerPipeReady()) {
+       char trigger_byte = 1;
+-      ssize_t bytes_written = ::write(trigger_pipe_write_fd_, &trigger_byte, 1);
+-      if (bytes_written == 1) {
++      auto& os_sys_calls = Api::OsSysCallsSingleton::get();
++      auto result = os_sys_calls.send(trigger_pipe_write_fd_, &trigger_byte, 1, 0);
++      if (result.return_value_ == 1) {
+         ENVOY_LOG(info,
+                   "reverse_tunnel: Successfully triggered reverse_conn_listener "
+                   "accept() for host {}",
+                   host_address);
+       } else {
+-        ENVOY_LOG(error, "reverse_tunnel: Failed to write trigger byte: {}", errorDetails(errno));
++        ENVOY_LOG(error, "reverse_tunnel: Failed to write trigger byte: {}",
++                  errorDetails(result.errno_));
        }
      }
+   }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index 59501e2114..f0243bea0b 100644
+index 5d1f8a9703..15789d1cb0 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 @@ -225,7 +225,7 @@ public:
@@ -765,7 +734,7 @@ index 59501e2114..f0243bea0b 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -505,8 +505,8 @@ private:
+@@ -511,8 +511,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -776,7 +745,7 @@ index 59501e2114..f0243bea0b 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -521,7 +521,7 @@ private:
+@@ -527,7 +527,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -798,7 +767,7 @@ index 64711ca549..df36762a37 100644
  #include <cstdint>
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index 908ff69156..b31fb2f6bb 100644
+index b2e82d1e69..5cf13cb097 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
 @@ -1,7 +1,5 @@
@@ -810,10 +779,10 @@ index 908ff69156..b31fb2f6bb 100644
  #include <cstdint>
  #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 10200293f6..0de998f5d5 100644
+index 687e1f9ad7..278dabcc09 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -428,7 +428,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
+@@ -447,7 +447,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
      // Found in idle pool — erase from list and clean up timers/events.
      ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
                node_id, cluster_id, fd);
@@ -827,7 +796,7 @@ index 10200293f6..0de998f5d5 100644
      fd_to_socket_it_map_.erase(socket_it);
  
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-index 5a078acdac..bdf5eaebca 100644
+index 4f75463a8f..23d4220a81 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
 @@ -1,7 +1,5 @@
@@ -882,11 +851,11 @@ index be69a93da5..fe5caa2ce0 100644
          "//source/common/common:lock_guard_lib",
          "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index 301e26627d..bfd2188e7f 100644
+index 998831dcdb..008d15cd4c 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
-@@ -38,7 +38,10 @@ envoy_cc_library(
-         "@abseil-cpp//absl/container:flat_hash_map",
+@@ -39,7 +39,10 @@ envoy_cc_library(
+         "@abseil-cpp//absl/types:span",
          "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
          "@envoy_api//envoy/extensions/dynamic_modules/v3:pkg_cc_proto",
 -    ],
@@ -908,7 +877,7 @@ index 10a0e03825..697ca723a3 100644
 +
 +exports_files(["abi.h"])
 diff --git a/source/extensions/dynamic_modules/dynamic_modules.cc b/source/extensions/dynamic_modules/dynamic_modules.cc
-index 96ef02f7b0..4796a7a80c 100644
+index f32ec728e8..b34d82cb78 100644
 --- a/source/extensions/dynamic_modules/dynamic_modules.cc
 +++ b/source/extensions/dynamic_modules/dynamic_modules.cc
 @@ -1,9 +1,15 @@
@@ -929,7 +898,7 @@ index 96ef02f7b0..4796a7a80c 100644
  #include <fstream>
  #include <string>
  #include <system_error>
-@@ -36,14 +42,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -37,14 +43,18 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    // > This can be used to test if the object is already resident (dlopen() returns NULL if it
    // > is not, or the object's handle if it is resident).
    //
@@ -950,7 +919,7 @@ index 96ef02f7b0..4796a7a80c 100644
    // RTLD_LAZY is required for not only performance but also simply to load the module, otherwise
    // dlopen results in Invalid argument.
    int mode = RTLD_LAZY;
-@@ -53,13 +63,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -54,13 +64,15 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
      // RTLD_LOCAL is used by default to avoid collisions between multiple modules.
      mode |= RTLD_LOCAL;
    }
@@ -968,7 +937,7 @@ index 96ef02f7b0..4796a7a80c 100644
    }
  
    DynamicModulePtr dynamic_module = std::make_unique<DynamicModule>(handle);
-@@ -75,7 +87,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
+@@ -76,7 +88,7 @@ newDynamicModule(const std::filesystem::path& object_file_absolute_path, const b
    const char* abi_version = (*init_function.value())();
    if (abi_version == nullptr) {
      return absl::InvalidArgumentError(
@@ -977,7 +946,7 @@ index 96ef02f7b0..4796a7a80c 100644
    }
    // We log a warning if the ABI version does not match exactly.
    if (absl::string_view(abi_version) != absl::string_view(ENVOY_DYNAMIC_MODULES_ABI_VERSION)) {
-@@ -106,8 +118,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
+@@ -107,8 +119,14 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
    if (!module_search_path) {
      module_search_path = ".";
    }
@@ -992,7 +961,7 @@ index 96ef02f7b0..4796a7a80c 100644
    const std::filesystem::path file_path_absolute = std::filesystem::absolute(file_path);
    if (std::filesystem::exists(file_path_absolute)) {
      absl::StatusOr<DynamicModulePtr> dynamic_module =
-@@ -134,7 +152,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
+@@ -135,7 +153,7 @@ absl::StatusOr<DynamicModulePtr> newDynamicModuleByNameImpl(const absl::string_v
  
    return absl::InvalidArgumentError(
        absl::StrCat("Failed to load dynamic module: lib", module_name,
@@ -1001,7 +970,7 @@ index 96ef02f7b0..4796a7a80c 100644
                     " or standard library paths such as LD_LIBRARY_PATH, /usr/lib, etc. or failed "
                     "to initialize: ",
                     dynamic_module.status().message()));
-@@ -224,7 +242,19 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
+@@ -225,7 +243,19 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
  
    // Write the (already SHA256-verified) bytes to a staging file, then atomically rename.
    std::string staging_template = temp_file_path.string() + ".XXXXXX";
@@ -1022,7 +991,7 @@ index 96ef02f7b0..4796a7a80c 100644
    if (fd == -1) {
      return absl::InternalError(absl::StrCat(
          "Failed to create temporary staging file for dynamic module: ", staging_template, ": ",
-@@ -233,13 +263,22 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
+@@ -234,13 +264,22 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
  
    size_t total_written = 0;
    while (total_written < module_bytes.size()) {
@@ -1045,7 +1014,7 @@ index 96ef02f7b0..4796a7a80c 100644
        std::error_code cleanup_ec;
        std::filesystem::remove(staging_template, cleanup_ec);
        return absl::InternalError(
-@@ -247,7 +286,11 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
+@@ -248,7 +287,11 @@ absl::Status writeDynamicModuleBytesToDisk(const absl::string_view module_bytes,
      }
      total_written += written;
    }
