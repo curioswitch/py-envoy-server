@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 62c3cb5a74..cfe25300ee 100644
+index 33ad3fae1d..f9f7581a44 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -81,6 +81,15 @@ genrule(
@@ -256,7 +256,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 38ada73e09..4deb4671d3 100644
+index b64d704c05..635d3e0709 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
@@ -289,7 +289,7 @@ index 38ada73e09..4deb4671d3 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -242,6 +249,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -241,6 +248,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -297,7 +297,7 @@ index 38ada73e09..4deb4671d3 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -945,7 +953,10 @@ def _luajit():
+@@ -923,7 +931,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -309,7 +309,7 @@ index 38ada73e09..4deb4671d3 100644
          patch_args = ["-p1"],
      )
  
-@@ -1088,6 +1099,12 @@ def _libmaxminddb():
+@@ -1066,6 +1077,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -323,10 +323,10 @@ index 38ada73e09..4deb4671d3 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 386cc4d1fb..e84b3ae2fc 100644
+index 4a9e2c406a..5480ff7aa4 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -676,6 +676,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -352,6 +352,18 @@ index 386cc4d1fb..e84b3ae2fc 100644
      libmaxminddb = dict(
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
+diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
+index 8261b9a6b0..15a8cbd557 100644
+--- a/envoy/api/io_error.h
++++ b/envoy/api/io_error.h
+@@ -5,6 +5,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "envoy/common/platform.h"
+ #include "envoy/common/pure.h"
+ 
+ namespace Envoy {
 diff --git a/envoy/api/os_sys_calls.h b/envoy/api/os_sys_calls.h
 index 6b0eaf6c61..5485094e9e 100644
 --- a/envoy/api/os_sys_calls.h
