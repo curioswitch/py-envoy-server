@@ -1039,11 +1039,11 @@ index f32ec728e8..b34d82cb78 100644
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index a9d9f161c8..569b458c4e 100644
+index 0b01769298..ce1f2c63d1 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -1099,8 +1099,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
-     sendErrorResponse(Http::Code::BadRequest, "mcp_json_rest_bridge_filter_method_not_string",
+@@ -1218,8 +1218,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+     sendErrorResponse(Http::Code::BadRequest, BridgeStatus::RequestMethodNotString,
                        generateErrorJsonResponse(-32601, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
 -  } else if (json_rpc[McpConstants::METHOD_FIELD] ==
@@ -1057,7 +1057,7 @@ index a9d9f161c8..569b458c4e 100644
      // field.
    } else if (!session_id.ok()) {
 diff --git a/source/server/BUILD b/source/server/BUILD
-index 86d676c17c..ab3d51d1ab 100644
+index 820cc2a4ff..dcf4d5a7a4 100644
 --- a/source/server/BUILD
 +++ b/source/server/BUILD
 @@ -240,6 +240,7 @@ envoy_cc_library(
@@ -1065,9 +1065,9 @@ index 86d676c17c..ab3d51d1ab 100644
          "//source/common/common:logger_lib",
          "//source/common/filesystem:filesystem_lib",
 +        "//source/common/singleton:threadsafe_singleton",
+         "@abseil-cpp//absl/base:core_headers",
          "@abseil-cpp//absl/strings",
-     ],
- )
+         "@abseil-cpp//absl/synchronization",
 diff --git a/tools/windows/BUILD b/tools/windows/BUILD
 new file mode 100644
 index 0000000000..7ddee365b9
