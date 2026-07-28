@@ -1,3 +1,17 @@
+diff --git a/api/bazel/repositories.bzl b/api/bazel/repositories.bzl
+index c93daba62e..bfa5d5b936 100644
+--- a/api/bazel/repositories.bzl
++++ b/api/bazel/repositories.bzl
+@@ -62,6 +62,9 @@ def api_dependencies(bzlmod = False):
+         name = "opentelemetry-proto",
+         location_name = "opentelemetry_proto",
+         build_file_content = OPENTELEMETRY_BUILD_CONTENT,
++        # Avoid shadowing the C++ standard <version> header on case-insensitive file systems.
++        patch_cmds = ["rm VERSION"],
++        patch_cmds_win = ["Remove-Item VERSION"],
+         repo_mapping = {"@com_google_absl": "@abseil-cpp"},
+     )
+     external_http_archive(
 diff --git a/bazel/BUILD b/bazel/BUILD
 index 33ad3fae1d..f9f7581a44 100644
 --- a/bazel/BUILD
@@ -256,19 +270,21 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index b64d704c05..635d3e0709 100644
+index 0c8ee491a4..3ba9adab93 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
-@@ -14,6 +14,8 @@ WINDOWS_SKIP_TARGETS = [
+@@ -14,6 +14,10 @@ WINDOWS_SKIP_TARGETS = [
      "envoy.filters.http.sxg",
      "envoy.tracers.dynamic_ot",
      "envoy.tracers.datadog",
++    # Requires POSIX signal handling.
++    "envoy.watchdog.backtrace_action",
 +    # Only implemented for Linux.
 +    "envoy.resource_monitors.cpu_utilization",
      # Extensions that require CEL.
      "envoy.access_loggers.extension_filters.cel",
      "envoy.rate_limit_descriptors.expr",
-@@ -32,6 +34,8 @@ WINDOWS_SKIP_TARGETS = [
+@@ -32,6 +36,8 @@ WINDOWS_SKIP_TARGETS = [
      "envoy.filters.http.rbac",
      "envoy.filters.network.rbac",
      "envoy.rbac.matchers.upstream_ip_port",
@@ -277,7 +293,7 @@ index b64d704c05..635d3e0709 100644
  ]
  
  NO_HTTP3_SKIP_TARGETS = [
-@@ -88,7 +92,10 @@ def _cc_deps():
+@@ -88,7 +94,10 @@ def _cc_deps():
          "proto-converter",
          location_name = "proto_converter",
          patch_args = ["-p1"],
@@ -289,7 +305,7 @@ index b64d704c05..635d3e0709 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -241,6 +248,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -241,6 +250,7 @@ def envoy_dependencies(skip_targets = []):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -297,7 +313,7 @@ index b64d704c05..635d3e0709 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -923,7 +931,10 @@ def _luajit():
+@@ -882,7 +892,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -309,7 +325,7 @@ index b64d704c05..635d3e0709 100644
          patch_args = ["-p1"],
      )
  
-@@ -1066,6 +1077,12 @@ def _libmaxminddb():
+@@ -1027,6 +1040,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -323,7 +339,7 @@ index b64d704c05..635d3e0709 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 4a9e2c406a..5480ff7aa4 100644
+index 9bcd7174b8..0f423aa858 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
