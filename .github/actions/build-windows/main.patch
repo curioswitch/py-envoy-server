@@ -270,7 +270,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 64f01689d0..1a1debcdb6 100644
+index ce97aacce0..ea034d88d7 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,10 @@ WINDOWS_SKIP_TARGETS = [
@@ -305,7 +305,7 @@ index 64f01689d0..1a1debcdb6 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -241,6 +250,7 @@ def envoy_dependencies(skip_targets = []):
+@@ -242,6 +251,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -313,7 +313,7 @@ index 64f01689d0..1a1debcdb6 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -882,7 +892,10 @@ def _luajit():
+@@ -876,7 +886,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -325,7 +325,7 @@ index 64f01689d0..1a1debcdb6 100644
          patch_args = ["-p1"],
      )
  
-@@ -1024,6 +1037,12 @@ def _libmaxminddb():
+@@ -1018,6 +1031,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -339,10 +339,10 @@ index 64f01689d0..1a1debcdb6 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 6ba6be0195..f405ef10cc 100644
+index 020d3ee325..28b8f2bbba 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -670,6 +670,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -866,18 +866,6 @@ index 575d09b5fa..ac497d95ec 100644
  #include <cstdint>
  #include <cstring>
  #include <functional>
-diff --git a/source/extensions/common/aws/BUILD b/source/extensions/common/aws/BUILD
-index be69a93da5..fe5caa2ce0 100644
---- a/source/extensions/common/aws/BUILD
-+++ b/source/extensions/common/aws/BUILD
-@@ -76,6 +76,7 @@ envoy_cc_library(
-     ],
-     deps = [
-         "//envoy/common:pure_lib",
-+        "//envoy/common:time_interface",
-         "//source/common/common:cleanup_lib",
-         "//source/common/common:lock_guard_lib",
-         "//source/common/common:thread_lib",
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
 index 998831dcdb..008d15cd4c 100644
 --- a/source/extensions/dynamic_modules/BUILD
