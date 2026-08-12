@@ -339,7 +339,7 @@ index ce97aacce0..ea034d88d7 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 020d3ee325..28b8f2bbba 100644
+index b1d181a0cd..523bf8095b 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -634,7 +634,7 @@ index 85d17764b3..fbf8fe5a06 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 5e9da3f3c1..3759165ef0 100644
+index be04fb0348..8608637c31 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -112,9 +112,10 @@ void ReverseConnectionIOHandle::cleanup() {
@@ -782,32 +782,8 @@ index c609d1dffa..7de4b94cc3 100644
  };
  
  } // namespace ReverseConnection
-diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
-index 64711ca549..df36762a37 100644
---- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
-+++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor.h
-@@ -1,7 +1,5 @@
- #pragma once
- 
--#include <unistd.h>
--
- #include <atomic>
- #include <cstdint>
- 
-diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-index b2e82d1e69..5cf13cb097 100644
---- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-+++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/reverse_tunnel_acceptor_extension.h
-@@ -1,7 +1,5 @@
- #pragma once
- 
--#include <unistd.h>
--
- #include <atomic>
- #include <cstdint>
- #include <memory>
 diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index e61f2511d6..471fa71ae5 100644
+index 17dfb19721..c962dd8482 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
 @@ -445,7 +445,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
@@ -823,20 +799,8 @@ index e61f2511d6..471fa71ae5 100644
      accepted_reverse_connections_[node_id].erase(socket_it->second);
      fd_to_socket_it_map_.erase(socket_it);
  
-diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-index 66128a683c..c5d65355f4 100644
---- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-+++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.h
-@@ -1,7 +1,5 @@
- #pragma once
- 
--#include <unistd.h>
--
- #include <atomic>
- #include <cstdint>
- #include <list>
 diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
-index e4f0aaac9e..e0c34c26be 100644
+index 768c5b8784..1446afe867 100644
 --- a/source/extensions/clusters/dynamic_modules/cluster.cc
 +++ b/source/extensions/clusters/dynamic_modules/cluster.cc
 @@ -184,7 +184,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
