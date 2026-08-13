@@ -545,59 +545,6 @@ index 2e7c0e7243..218ea50778 100644
          watcher->active_callbacks_.push(cb_closure);
          // write a byte to the other end of the socket that libevent is watching
          // this tells the libevent callback to pull this callback off the active_callbacks_
-diff --git a/source/common/memory/aligned_allocator.h b/source/common/memory/aligned_allocator.h
-index 94cb5b14d8..f1dc585543 100644
---- a/source/common/memory/aligned_allocator.h
-+++ b/source/common/memory/aligned_allocator.h
-@@ -46,6 +46,8 @@ public:
-       return nullptr;
-     }
-     return static_cast<T*>(ptr);
-+#elif defined(_WIN32)
-+    return static_cast<T*>(_aligned_malloc(bytes, Alignment));
- #else
-     // Ensure bytes is a multiple of Alignment, which is required by std::aligned_alloc.
-     bytes = round_up_to_alignment(bytes);
-@@ -57,6 +59,8 @@ public:
-     if (p != nullptr) {
- #ifdef ALIGNED_ALLOCATOR_USE_POSIX_MEMALIGN
-       free(p);
-+#elif defined(_WIN32)
-+      _aligned_free(p);
- #else
-       std::free(p);
- #endif
-diff --git a/source/exe/win32/service_base.cc b/source/exe/win32/service_base.cc
-index f059f863c4..25a7dcd6e0 100644
---- a/source/exe/win32/service_base.cc
-+++ b/source/exe/win32/service_base.cc
-@@ -2,6 +2,8 @@
- 
- #include <codecvt>
- #include <locale>
-+#include <processenv.h>
-+#include <shellapi.h>
- 
- #include "source/common/buffer/buffer_impl.h"
- #include "source/common/common/assert.h"
-diff --git a/source/exe/win32/service_base.h b/source/exe/win32/service_base.h
-index 14bd8498dd..44be98e9f0 100644
---- a/source/exe/win32/service_base.h
-+++ b/source/exe/win32/service_base.h
-@@ -1,12 +1,9 @@
- #pragma once
- 
--#include <processenv.h>
--#include <shellapi.h>
--#include <winsvc.h>
--
- #include <functional>
- #include <string>
- 
-+#include "envoy/common/platform.h"
- #include "envoy/event/signal.h"
- 
- #include "source/common/common/win32/event_logger_impl.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
