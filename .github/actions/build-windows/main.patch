@@ -1,8 +1,8 @@
 diff --git a/api/bazel/repositories.bzl b/api/bazel/repositories.bzl
-index c93daba62e..bfa5d5b936 100644
+index 999b4633ca..b8b382f91e 100644
 --- a/api/bazel/repositories.bzl
 +++ b/api/bazel/repositories.bzl
-@@ -62,6 +62,9 @@ def api_dependencies(bzlmod = False):
+@@ -72,6 +72,9 @@ def api_dependencies(bzlmod = False):
          name = "opentelemetry-proto",
          location_name = "opentelemetry_proto",
          build_file_content = OPENTELEMETRY_BUILD_CONTENT,
@@ -13,7 +13,7 @@ index c93daba62e..bfa5d5b936 100644
      )
      external_http_archive(
 diff --git a/bazel/BUILD b/bazel/BUILD
-index fe0895ec6c..422c65ca1c 100644
+index d83ae2fa49..3f3d815c2f 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -81,6 +81,15 @@ genrule(
@@ -68,7 +68,7 @@ index 0000000000..853d5b57e2
 +     name = "aarch64",
 +     values = {"cpu": "linux-aarch_64"},
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index 3de0fc66e0..2aa47d1f2c 100644
+index 87710001fb..b5cacf917f 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -231,7 +231,10 @@ def envoy_exported_symbols_input():
@@ -270,7 +270,7 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index ce97aacce0..ea034d88d7 100644
+index 9d1d5795b5..1e1a97c65e 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -14,6 +14,10 @@ WINDOWS_SKIP_TARGETS = [
@@ -293,7 +293,7 @@ index ce97aacce0..ea034d88d7 100644
  ]
  
  NO_HTTP3_SKIP_TARGETS = [
-@@ -88,7 +94,10 @@ def _cc_deps():
+@@ -89,7 +95,10 @@ def _cc_deps():
          "proto-converter",
          location_name = "proto_converter",
          patch_args = ["-p1"],
@@ -305,7 +305,7 @@ index ce97aacce0..ea034d88d7 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -242,6 +251,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
+@@ -245,6 +254,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -313,7 +313,7 @@ index ce97aacce0..ea034d88d7 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -876,7 +886,10 @@ def _luajit():
+@@ -895,7 +905,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -325,7 +325,7 @@ index ce97aacce0..ea034d88d7 100644
          patch_args = ["-p1"],
      )
  
-@@ -1018,6 +1031,12 @@ def _libmaxminddb():
+@@ -1037,6 +1050,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -339,7 +339,7 @@ index ce97aacce0..ea034d88d7 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index b1d181a0cd..523bf8095b 100644
+index 1cb0acdc05..e07f308a52 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -466,47 +466,6 @@ index 3eef471757..3940dae23d 100644
  #endif
  
    /**
-diff --git a/source/common/event/win32/signal_impl.cc b/source/common/event/win32/signal_impl.cc
-index 962d45a786..623120d8d3 100644
---- a/source/common/event/win32/signal_impl.cc
-+++ b/source/common/event/win32/signal_impl.cc
-@@ -33,9 +33,10 @@ SignalEventImpl::SignalEventImpl(DispatcherImpl& dispatcher, signal_t signal_num
- 
-   read_handle_->initializeFileEvent(
-       dispatcher,
--      [this](uint32_t events) -> void {
-+      [this](uint32_t events) -> absl::Status {
-         ASSERT(events == Event::FileReadyType::Read);
-         cb_();
-+        return absl::OkStatus();
-       },
-       Event::FileTriggerType::Level, Event::FileReadyType::Read);
-   eventBridgeHandlersSingleton::get()[signal_num] = write_handle;
-diff --git a/source/common/filesystem/win32/watcher_impl.cc b/source/common/filesystem/win32/watcher_impl.cc
-index 0b1b088683..5ba06e75fc 100644
---- a/source/common/filesystem/win32/watcher_impl.cc
-+++ b/source/common/filesystem/win32/watcher_impl.cc
-@@ -23,9 +23,10 @@ WatcherImpl::WatcherImpl(Event::Dispatcher& dispatcher, Filesystem::Instance& fi
- 
-   read_handle_->initializeFileEvent(
-       dispatcher,
--      [this](uint32_t events) -> void {
-+      [this](uint32_t events) -> absl::Status {
-         ASSERT(events == Event::FileReadyType::Read);
-         onDirectoryEvent();
-+        return absl::OkStatus();
-       },
-       Event::FileTriggerType::Level, Event::FileReadyType::Read);
- 
-@@ -204,7 +205,7 @@ void WatcherImpl::directoryChangeCompletion(DWORD err, DWORD num_bytes, LPOVERLA
-       if (watch.file_ == file && (watch.events_ & events)) {
-         ENVOY_LOG(debug, "matched callback: file: {}", watcher->wstring_converter_.to_bytes(file));
-         const auto cb = watch.cb_;
--        const auto cb_closure = [cb, events]() -> void { cb(events); };
-+        const auto cb_closure = [cb, events]() -> void { (void)cb(events); };
-         watcher->active_callbacks_.push(cb_closure);
-         // write a byte to the other end of the socket that libevent is watching
-         // this tells the libevent callback to pull this callback off the active_callbacks_
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
@@ -916,10 +875,10 @@ index f32ec728e8..b34d82cb78 100644
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
 diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index b175ab39b5..64abebb4c8 100644
+index 46d631de0c..8a730c442d 100644
 --- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
 +++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -1278,8 +1278,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
+@@ -1274,8 +1274,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
      sendErrorResponse(Http::Code::OK, BridgeStatus::RequestMethodNotString,
                        generateErrorJsonResponse(-32600, "Method field is not a string").dump());
      return absl::InvalidArgumentError("Method field is not a string");
