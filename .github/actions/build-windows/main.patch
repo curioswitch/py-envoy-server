@@ -1,22 +1,22 @@
 diff --git a/api/bazel/repositories.bzl b/api/bazel/repositories.bzl
-index 999b4633ca..b8b382f91e 100644
+index 623b8549db..034b7d95f2 100644
 --- a/api/bazel/repositories.bzl
 +++ b/api/bazel/repositories.bzl
-@@ -72,6 +72,9 @@ def api_dependencies(bzlmod = False):
+@@ -84,6 +84,9 @@ def api_dependencies(bzlmod = False):
          name = "opentelemetry-proto",
          location_name = "opentelemetry_proto",
          build_file_content = OPENTELEMETRY_BUILD_CONTENT,
 +        # Avoid shadowing the C++ standard <version> header on case-insensitive file systems.
 +        patch_cmds = ["rm VERSION"],
 +        patch_cmds_win = ["Remove-Item VERSION"],
-         repo_mapping = {"@com_google_absl": "@abseil-cpp"},
-     )
-     external_http_archive(
+         repo_mapping = {
+             "@com_google_absl": "@abseil-cpp",
+             "@com_google_protobuf": "@protobuf",
 diff --git a/bazel/BUILD b/bazel/BUILD
-index d83ae2fa49..3f3d815c2f 100644
+index 2e7d1f9b28..265e36adab 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -81,6 +81,15 @@ genrule(
+@@ -95,6 +95,15 @@ genrule(
      stamp = 1,
  )
  
@@ -68,7 +68,7 @@ index 0000000000..853d5b57e2
 +     name = "aarch64",
 +     values = {"cpu": "linux-aarch_64"},
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index 87710001fb..b5cacf917f 100644
+index c2989f11b6..4d4ff452bf 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -231,7 +231,10 @@ def envoy_exported_symbols_input():
@@ -93,24 +93,8 @@ index 87710001fb..b5cacf917f 100644
          "//conditions:default": [],
      })
  
-diff --git a/bazel/external/zstd.BUILD b/bazel/external/zstd.BUILD
-index 475a27afd9..4e70939377 100644
---- a/bazel/external/zstd.BUILD
-+++ b/bazel/external/zstd.BUILD
-@@ -63,7 +63,10 @@ cc_library(
-         "//conditions:default": [],
-     }),
-     includes = ["lib"],
--    linkopts = ["-pthread"],
-+    linkopts = select({
-+        "@platforms//os:windows": [],
-+        "//conditions:default": ["-pthread"],
-+    }),
-     linkstatic = True,
- )
- 
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index 1b64c55f40..7b0a110c85 100644
+index dcd223daa4..e32b321284 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
 @@ -40,6 +40,7 @@ configure_make(
@@ -270,30 +254,10 @@ index f204c7089a..d522f9cb24 100644
 +    ],
 +)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index 9d1d5795b5..1e1a97c65e 100644
+index 80f6a0d719..7f211ed534 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
-@@ -14,6 +14,10 @@ WINDOWS_SKIP_TARGETS = [
-     "envoy.filters.http.sxg",
-     "envoy.tracers.dynamic_ot",
-     "envoy.tracers.datadog",
-+    # Requires POSIX signal handling.
-+    "envoy.watchdog.backtrace_action",
-+    # Only implemented for Linux.
-+    "envoy.resource_monitors.cpu_utilization",
-     # Extensions that require CEL.
-     "envoy.access_loggers.extension_filters.cel",
-     "envoy.rate_limit_descriptors.expr",
-@@ -32,6 +36,8 @@ WINDOWS_SKIP_TARGETS = [
-     "envoy.filters.http.rbac",
-     "envoy.filters.network.rbac",
-     "envoy.rbac.matchers.upstream_ip_port",
-+    # TODO: See if objcopy issue can be resolved
-+    "envoy.network.dns_resolver.hickory",
- ]
- 
- NO_HTTP3_SKIP_TARGETS = [
-@@ -89,7 +95,10 @@ def _cc_deps():
+@@ -86,7 +86,10 @@ def _cc_deps():
          "proto-converter",
          location_name = "proto_converter",
          patch_args = ["-p1"],
@@ -305,7 +269,7 @@ index 9d1d5795b5..1e1a97c65e 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -245,6 +254,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
+@@ -266,6 +269,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
      external_http_archive("bazel_compdb")
      external_http_archive("envoy_toolshed")
  
@@ -313,7 +277,7 @@ index 9d1d5795b5..1e1a97c65e 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -895,7 +905,10 @@ def _luajit():
+@@ -973,7 +977,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -325,7 +289,7 @@ index 9d1d5795b5..1e1a97c65e 100644
          patch_args = ["-p1"],
      )
  
-@@ -1037,6 +1050,12 @@ def _libmaxminddb():
+@@ -1127,6 +1134,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -339,7 +303,7 @@ index 9d1d5795b5..1e1a97c65e 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 1cb0acdc05..e07f308a52 100644
+index 1ef794367a..19716d3110 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -369,10 +333,10 @@ index 1cb0acdc05..e07f308a52 100644
          version = "1.13.3",
          sha256 = "a66502ea76eadbe17f2cd6fd708946777253972d2ae8157dee1b23a2fb528171",
 diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
-index 8261b9a6b0..15a8cbd557 100644
+index fb12ee3d16..bcd3463278 100644
 --- a/envoy/api/io_error.h
 +++ b/envoy/api/io_error.h
-@@ -5,6 +5,7 @@
+@@ -6,6 +6,7 @@
  #include <string>
  #include <utility>
  
@@ -453,19 +417,6 @@ index 1e932c27bb..2d0cf4ad8b 100644
    const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
-diff --git a/source/common/common/thread.h b/source/common/common/thread.h
-index 3eef471757..3940dae23d 100644
---- a/source/common/common/thread.h
-+++ b/source/common/common/thread.h
-@@ -236,6 +236,8 @@ public:
-    * is not supported.
-    */
-   static bool isMainOrTestThread() { return isMainThread() || TestThread::isTestThread(); }
-+#else
-+  static bool isMainOrTestThread() { return isMainThread(); }
- #endif
- 
-   /**
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
 index 5b769c38d1..ea44029ba4 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
@@ -502,10 +453,10 @@ index 85d17764b3..fbf8fe5a06 100644
  
  #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 52ad3dde7e..537b194ade 100644
+index f4cf4adedd..2be09e5cac 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-@@ -121,9 +121,10 @@ void ReverseConnectionIOHandle::cleanup() {
+@@ -123,9 +123,10 @@ void ReverseConnectionIOHandle::cleanup() {
                   "reverse_tunnel: cleaning up trigger pipe; "
                   "trigger_pipe_write_fd_={}, trigger_pipe_read_fd_={}",
                   trigger_pipe_write_fd_, trigger_pipe_read_fd_);
@@ -519,7 +470,7 @@ index 52ad3dde7e..537b194ade 100644
    }
  
    // If initializeFileEvent() ran, fd_ was reassigned to trigger_pipe_read_fd_ and the base class
-@@ -200,8 +201,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
+@@ -202,8 +203,8 @@ void ReverseConnectionIOHandle::initializeFileEvent(Event::Dispatcher& dispatche
  
    // Replace the monitored FD with pipe read FD
    // This must happen before any event registration.
@@ -530,7 +481,7 @@ index 52ad3dde7e..537b194ade 100644
      ENVOY_LOG(info, "Replacing monitored FD from {} to pipe read FD {}", fd_, trigger_fd);
      fd_ = trigger_fd;
    }
-@@ -227,7 +228,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
+@@ -229,7 +230,9 @@ Envoy::Network::IoHandlePtr ReverseConnectionIOHandle::accept(struct sockaddr* a
    ENVOY_LOG(debug, "reverse_tunnel: accept() called");
    if (isTriggerPipeReady()) {
      char trigger_byte;
@@ -541,7 +492,7 @@ index 52ad3dde7e..537b194ade 100644
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "reverse_tunnel: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -405,7 +408,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -417,7 +420,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "reverse_tunnel: event: {}", static_cast<int>(event));
  }
  
@@ -550,7 +501,7 @@ index 52ad3dde7e..537b194ade 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1153,30 +1156,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1172,30 +1175,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -597,7 +548,7 @@ index 52ad3dde7e..537b194ade 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(
-@@ -1306,14 +1311,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
+@@ -1325,14 +1330,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
      // Trigger accept mechanism safely.
      if (isTriggerPipeReady()) {
        char trigger_byte = 1;
@@ -618,10 +569,10 @@ index 52ad3dde7e..537b194ade 100644
      }
    }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index b1c4296b05..b366ebc4d3 100644
+index 6c31658ead..55c6c5aaa7 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-@@ -225,7 +225,7 @@ public:
+@@ -228,7 +228,7 @@ public:
     * Get the file descriptor for the pipe monitor used to wake up accept().
     * @return the file descriptor for the pipe monitor
     */
@@ -630,7 +581,7 @@ index b1c4296b05..b366ebc4d3 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -515,8 +515,8 @@ private:
+@@ -518,8 +518,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -641,7 +592,7 @@ index b1c4296b05..b366ebc4d3 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -535,7 +535,7 @@ private:
+@@ -538,7 +538,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
