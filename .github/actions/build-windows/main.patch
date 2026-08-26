@@ -13,7 +13,7 @@ index 623b8549db..034b7d95f2 100644
              "@com_google_absl": "@abseil-cpp",
              "@com_google_protobuf": "@protobuf",
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 2e7d1f9b28..265e36adab 100644
+index f7012440d8..7fc1acc400 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -95,6 +95,15 @@ genrule(
@@ -236,23 +236,6 @@ index 0000000000..8b0ae5a505
 + @set LJLINKTYPE=/DEBUG /RELEASE
 + @set LJLINKTYPE_DEBUG=/DEBUG
 + @set LJLINKTARGET=/OPT:REF /OPT:ICF /INCREMENTAL:NO
-diff --git a/bazel/platforms/BUILD b/bazel/platforms/BUILD
-index f204c7089a..d522f9cb24 100644
---- a/bazel/platforms/BUILD
-+++ b/bazel/platforms/BUILD
-@@ -111,3 +111,12 @@ platform(
-         "@platforms//os:macos",
-     ],
- )
-+
-+platform(
-+    name = "x64_windows-clang-cl",
-+    constraint_values = [
-+        "@platforms//cpu:x86_64",
-+        "@platforms//os:windows",
-+        "@bazel_tools//tools/cpp:clang-cl",
-+    ],
-+)
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
 index 80f6a0d719..7f211ed534 100644
 --- a/bazel/repositories.bzl
@@ -303,7 +286,7 @@ index 80f6a0d719..7f211ed534 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 1ef794367a..19716d3110 100644
+index 28bdb2f152..ea52122d20 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -825,24 +808,6 @@ index f32ec728e8..b34d82cb78 100644
  
    std::filesystem::path staging_path(staging_template);
    std::error_code ec;
-diff --git a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-index 46d631de0c..8a730c442d 100644
---- a/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-+++ b/source/extensions/filters/http/mcp_json_rest_bridge/mcp_json_rest_bridge_filter.cc
-@@ -1274,8 +1274,11 @@ absl::Status McpJsonRestBridgeFilter::validateJsonRpcIdAndMethod(const nlohmann:
-     sendErrorResponse(Http::Code::OK, BridgeStatus::RequestMethodNotString,
-                       generateErrorJsonResponse(-32600, "Method field is not a string").dump());
-     return absl::InvalidArgumentError("Method field is not a string");
--  } else if (json_rpc[McpConstants::METHOD_FIELD] ==
--             McpConstants::Methods::NOTIFICATION_INITIALIZED) {
-+  }
-+
-+  const absl::string_view method =
-+      json_rpc[McpConstants::METHOD_FIELD].get_ref<const std::string&>();
-+  if (method == McpConstants::Methods::NOTIFICATION_INITIALIZED) {
-     // The notifications/initialized request is not required to have an ID
-     // field.
-   } else if (!session_id.ok()) {
 diff --git a/tools/windows/BUILD b/tools/windows/BUILD
 new file mode 100644
 index 0000000000..7ddee365b9
