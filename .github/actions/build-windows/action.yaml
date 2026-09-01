@@ -81,7 +81,7 @@ runs:
           --define signal_trace=disabled `
           --define hot_restart=disabled `
           --define tcmalloc=disabled `
-          --@proxy-wasm-cpp-host//bazel:engine=disabled `
+          ${{ startsWith(inputs.version, 'v1.39.') && '--define wasm=disabled `' || '--@proxy-wasm-cpp-host//bazel:engine=disabled `' }}
           --define manual_stamp=manual_stamp `
           --cxxopt=/std:c++20 `
           --host_cxxopt=/std:c++20 `
