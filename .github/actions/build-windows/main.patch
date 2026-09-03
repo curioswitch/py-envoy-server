@@ -1,8 +1,8 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index eab7a59298..e18dc9b8c5 100644
+index 4b566c6d66..48eb2bd092 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -98,6 +98,15 @@ genrule(
+@@ -99,6 +99,15 @@ genrule(
      stamp = 1,
  )
  
@@ -54,7 +54,7 @@ index 0000000000..853d5b57e2
 +     name = "aarch64",
 +     values = {"cpu": "linux-aarch_64"},
 diff --git a/bazel/envoy_internal.bzl b/bazel/envoy_internal.bzl
-index c2989f11b6..4d4ff452bf 100644
+index 2adc5df036..5ffbd56823 100644
 --- a/bazel/envoy_internal.bzl
 +++ b/bazel/envoy_internal.bzl
 @@ -231,7 +231,10 @@ def envoy_exported_symbols_input():
@@ -80,10 +80,10 @@ index c2989f11b6..4d4ff452bf 100644
      })
  
 diff --git a/bazel/foreign_cc/BUILD b/bazel/foreign_cc/BUILD
-index dcd223daa4..e32b321284 100644
+index f6b4ac8171..837bb451e4 100644
 --- a/bazel/foreign_cc/BUILD
 +++ b/bazel/foreign_cc/BUILD
-@@ -40,6 +40,7 @@ configure_make(
+@@ -61,6 +61,7 @@ configure_make(
          "nocompdb",
          "skip_on_windows",
      ],
@@ -91,7 +91,7 @@ index dcd223daa4..e32b321284 100644
      targets = ["install"],
  )
  
-@@ -177,7 +178,10 @@ cc_library(
+@@ -198,7 +199,10 @@ cc_library(
  
  configure_make(
      name = "luajit",
@@ -103,7 +103,7 @@ index dcd223daa4..e32b321284 100644
      env = select({
          # This shouldn't be needed! See
          # https://github.com/envoyproxy/envoy/issues/6084
-@@ -479,6 +483,29 @@ envoy_cmake(
+@@ -500,6 +504,29 @@ envoy_cmake(
      tags = ["skip_on_windows"],
  )
  
@@ -223,7 +223,7 @@ index 0000000000..8b0ae5a505
 + @set LJLINKTYPE_DEBUG=/DEBUG
 + @set LJLINKTARGET=/OPT:REF /OPT:ICF /INCREMENTAL:NO
 diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
-index bb871373b0..89fc9300e7 100644
+index a5b4f15017..fe6b45d8bb 100644
 --- a/bazel/repositories.bzl
 +++ b/bazel/repositories.bzl
 @@ -86,7 +86,10 @@ def _cc_deps():
@@ -238,15 +238,15 @@ index bb871373b0..89fc9300e7 100644
          patch_cmds = [
              "rm src/google/protobuf/stubs/common.cc",
              "rm src/google/protobuf/stubs/common.h",
-@@ -276,6 +279,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
-     external_http_archive("bazel_compdb")
+@@ -278,6 +281,7 @@ def envoy_dependencies(skip_targets = [], bzlmod = False):
+     )
      external_http_archive("envoy_toolshed")
  
 +    _com_github_dlfcn_win32()
      _libmaxminddb()
      _thrift()
      _wuffs()
-@@ -993,7 +997,10 @@ def _luajit():
+@@ -999,7 +1003,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
          build_file_content = LUAJIT_BUILD_CONTENT,
@@ -258,7 +258,7 @@ index bb871373b0..89fc9300e7 100644
          patch_args = ["-p1"],
      )
  
-@@ -1147,6 +1154,12 @@ def _libmaxminddb():
+@@ -1153,6 +1160,12 @@ def _libmaxminddb():
          build_file_content = LIBMAXMINDDB_BUILD_CONTENT,
      )
  
@@ -272,10 +272,10 @@ index bb871373b0..89fc9300e7 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 2124cdc5f2..48e64f785b 100644
+index 2aa6ff9eed..d09538edb5 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
-@@ -654,6 +654,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
+@@ -649,6 +649,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
          sha256 = "26d4021f6898e23b82ef953078389dd49ac2b5618ac564ade4ef87cced147b38",
          urls = ["https://github.com/bazelbuild/rules_license/releases/download/{version}/rules_license-{version}.tar.gz"],
      ),
@@ -357,43 +357,8 @@ index f708399e71..13722728bb 100644
    const int rc = ::getsockopt(sockfd, level, optname, static_cast<char*>(optval), optlen);
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
-diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
-index 5b769c38d1..ea44029ba4 100644
---- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
-+++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.cc
-@@ -1,8 +1,12 @@
- #include "source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h"
- 
-+#ifndef _WIN32
- #include <arpa/inet.h>
- #include <netinet/in.h>
- #include <sys/socket.h>
-+#else
-+#include <winsock2.h>
-+#endif // _WIN32
- 
- #include <cstring>
- #include <functional>
-diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-index 85d17764b3..fbf8fe5a06 100644
---- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-+++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_address.h
-@@ -1,8 +1,13 @@
- #pragma once
- 
-+#ifndef _WIN32
- #include <netinet/in.h>
- #include <sys/socket.h>
- 
-+#else
-+#include <winsock2.h>
-+#endif // _WIN32
-+
- #include <functional>
- 
- #include "envoy/network/address.h"
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
-index 9644f3f62f..7007e8cd4b 100644
+index b9e82cad50..5647252a1c 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.cc
 @@ -122,9 +122,10 @@ void ReverseConnectionIOHandle::cleanup() {
@@ -432,7 +397,7 @@ index 9644f3f62f..7007e8cd4b 100644
      if (bytes_read == 1) {
        ENVOY_LOG(debug, "reverse_tunnel: received trigger, processing connection.");
        // When a connection is established, a byte is written to the trigger_pipe_write_fd_ and the
-@@ -416,7 +419,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
+@@ -433,7 +436,7 @@ void ReverseConnectionIOHandle::onEvent(Network::ConnectionEvent event) {
    ENVOY_LOG(trace, "reverse_tunnel: event: {}", static_cast<int>(event));
  }
  
@@ -441,7 +406,7 @@ index 9644f3f62f..7007e8cd4b 100644
  
  // Get time source for consistent time operations.
  TimeSource& ReverseConnectionIOHandle::getTimeSource() const {
-@@ -1167,30 +1170,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
+@@ -1184,30 +1187,32 @@ bool ReverseConnectionIOHandle::initiateOneReverseConnection(const std::string&
  // Trigger pipe used to wake up accept() when a connection is established.
  void ReverseConnectionIOHandle::createTriggerPipe() {
    ENVOY_LOG(debug, "reverse_tunnel: Creating trigger pipe for single-byte mechanism");
@@ -488,7 +453,7 @@ index 9644f3f62f..7007e8cd4b 100644
  }
  
  void ReverseConnectionIOHandle::onConnectionDone(
-@@ -1320,14 +1325,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
+@@ -1335,14 +1340,16 @@ void ReverseConnectionIOHandle::onConnectionDone(
      // Trigger accept mechanism safely.
      if (isTriggerPipeReady()) {
        char trigger_byte = 1;
@@ -509,10 +474,10 @@ index 9644f3f62f..7007e8cd4b 100644
      }
    }
 diff --git a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-index 9794ef5789..18f611f0b8 100644
+index 37446fe8f6..c5180515cf 100644
 --- a/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
 +++ b/source/extensions/bootstrap/reverse_tunnel/downstream_socket_interface/reverse_connection_io_handle.h
-@@ -230,7 +230,7 @@ public:
+@@ -233,7 +233,7 @@ public:
     * Get the file descriptor for the pipe monitor used to wake up accept().
     * @return the file descriptor for the pipe monitor
     */
@@ -521,7 +486,7 @@ index 9794ef5789..18f611f0b8 100644
  
    // Callbacks from RCConnectionWrapper.
    /**
-@@ -526,8 +526,8 @@ private:
+@@ -529,8 +529,8 @@ private:
  
    // Simple pipe-based trigger mechanism to wake up accept() when a connection is established.
    // Inlined directly for simplicity and reduced test coverage requirements.
@@ -532,7 +497,7 @@ index 9794ef5789..18f611f0b8 100644
  
    // Connection management : We store the established connections in a queue.
    // and pop the last established connection when data is read on trigger_pipe_read_fd_
-@@ -546,7 +546,7 @@ private:
+@@ -549,7 +549,7 @@ private:
    Event::Dispatcher* worker_dispatcher_{nullptr}; // Dispatcher for the worker thread
  
    // Store original socket FD for cleanup.
@@ -541,23 +506,6 @@ index 9794ef5789..18f611f0b8 100644
  };
  
  } // namespace ReverseConnection
-diff --git a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-index 17dfb19721..c962dd8482 100644
---- a/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-+++ b/source/extensions/bootstrap/reverse_tunnel/upstream_socket_interface/upstream_socket_manager.cc
-@@ -445,7 +445,11 @@ void UpstreamSocketManager::markSocketDead(const int fd) {
-     // Found in idle pool — erase from list and clean up timers/events.
-     ENVOY_LOG(debug, "reverse_tunnel: marking idle socket dead. node: {} cluster: {} fd: {}.",
-               node_id, cluster_id, fd);
--    ::shutdown(fd, SHUT_RDWR);
-+#ifndef _WIN32
-+      ::shutdown(fd, SHUT_RDWR);
-+#else
-+      ::shutdown(fd, SD_BOTH);
-+#endif // _WIN32
-     accepted_reverse_connections_[node_id].erase(socket_it->second);
-     fd_to_socket_it_map_.erase(socket_it);
- 
 diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
 index a0aeb1ac0f..3175a29f38 100644
 --- a/source/extensions/clusters/dynamic_modules/cluster.cc
@@ -571,24 +519,6 @@ index a0aeb1ac0f..3175a29f38 100644
      dispatcher.post([cluster = std::move(cluster)]() mutable {
        cluster->server_initialized_handle_.reset();
        cluster->shutdown_handle_.reset();
-diff --git a/source/extensions/clusters/reverse_connection/reverse_connection.h b/source/extensions/clusters/reverse_connection/reverse_connection.h
-index 575d09b5fa..ac497d95ec 100644
---- a/source/extensions/clusters/reverse_connection/reverse_connection.h
-+++ b/source/extensions/clusters/reverse_connection/reverse_connection.h
-@@ -1,8 +1,13 @@
- #pragma once
- 
-+#ifndef _WIN32
- #include <netinet/in.h>
- #include <sys/socket.h>
- 
-+#else
-+#include <winsock2.h>
-+#endif // _WIN32
-+
- #include <cstdint>
- #include <cstring>
- #include <functional>
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
 index d0fa20330d..eeb44ca96a 100644
 --- a/source/extensions/dynamic_modules/BUILD
