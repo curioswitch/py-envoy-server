@@ -297,6 +297,15 @@ index 38ada73e09..4deb4671d3 100644
      _libmaxminddb()
      _thrift()
      _wuffs()
+@@ -870,7 +878,7 @@ def _quiche():
+     external_http_archive(
+         name = "quiche",
+-        patch_args = ["-p1"],
++        patch_args = ["-p1", "--binary"],
+         patches = [
+             "@envoy//bazel:quiche.patch",
+             "@envoy//bazel/external:oghttp2_trailer_fix.patch",
+         ],
 @@ -945,7 +953,10 @@ def _luajit():
      external_http_archive(
          name = "luajit",
