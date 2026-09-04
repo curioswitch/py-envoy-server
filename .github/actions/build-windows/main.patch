@@ -1,5 +1,5 @@
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 4b566c6d66..48eb2bd092 100644
+index fefd7c435b..411ed2b307 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -99,6 +99,15 @@ genrule(
@@ -272,7 +272,7 @@ index a5b4f15017..fe6b45d8bb 100644
      external_http_archive(
          name = "wuffs",
 diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
-index 2aa6ff9eed..d09538edb5 100644
+index 1647059754..9b294dcc9c 100644
 --- a/bazel/repository_locations.bzl
 +++ b/bazel/repository_locations.bzl
 @@ -649,6 +649,25 @@ REPOSITORY_LOCATIONS_SPEC = dict(
@@ -506,19 +506,6 @@ index 37446fe8f6..c5180515cf 100644
  };
  
  } // namespace ReverseConnection
-diff --git a/source/extensions/clusters/dynamic_modules/cluster.cc b/source/extensions/clusters/dynamic_modules/cluster.cc
-index a0aeb1ac0f..3175a29f38 100644
---- a/source/extensions/clusters/dynamic_modules/cluster.cc
-+++ b/source/extensions/clusters/dynamic_modules/cluster.cc
-@@ -184,7 +184,7 @@ DynamicModuleClusterHandle::~DynamicModuleClusterHandle() {
-   Event::Dispatcher& dispatcher = cluster->dispatcher_;
-   // The lifecycle handle resets unregister from main-thread-owned notifiers. When the handle is
-   // destroyed on a worker thread, post the full teardown onto the main dispatcher.
--  if (!Thread::MainThread::isMainThread() && !Thread::TestThread::isTestThread()) {
-+  if (!Thread::MainThread::isMainThread()) {
-     dispatcher.post([cluster = std::move(cluster)]() mutable {
-       cluster->server_initialized_handle_.reset();
-       cluster->shutdown_handle_.reset();
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
 index d0fa20330d..eeb44ca96a 100644
 --- a/source/extensions/dynamic_modules/BUILD
