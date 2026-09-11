@@ -1,16 +1,8 @@
 diff --git a/MODULE.bazel b/MODULE.bazel
-index e463b0bb83..7ccad876d4 100644
+index e463b0bb83..068a77efd0 100644
 --- a/MODULE.bazel
 +++ b/MODULE.bazel
-@@ -13,7 +13,6 @@ bazel_dep(name = "apple_support", version = "2.3.0", repo_name = "build_bazel_ap
- bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
- bazel_dep(name = "aspect_rules_js", version = "2.5.0")
- bazel_dep(name = "aws-c-auth-testdata", version = "0.10.4.envoy")
--
- bazel_dep(name = "bazel-compdb", version = "0.0.0-20220906-4086479.envoy")
- bazel_dep(name = "bazel_features", version = "1.50.0")
- bazel_dep(name = "bazel_skylib", version = "1.9.0")
-@@ -122,6 +121,21 @@ bazel_dep(name = "zipkin-api", version = "1.0.0.envoy")
+@@ -122,6 +122,21 @@ bazel_dep(name = "zipkin-api", version = "1.0.0.envoy")
  bazel_dep(name = "zlib-ng", version = "2.3.2.envoy")
  bazel_dep(name = "zstd", version = "1.5.7.bcr.1")
  
@@ -32,7 +24,7 @@ index e463b0bb83..7ccad876d4 100644
  ####################################################################################
  # deps: Dev
  ####################################################################################
-@@ -159,6 +173,37 @@ single_version_override(
+@@ -159,6 +174,25 @@ single_version_override(
      version = "0.20260413.0",
  )
  
@@ -41,12 +33,6 @@ index e463b0bb83..7ccad876d4 100644
 +    module_name = "cel-cpp",
 +    patch_strip = 1,
 +    patches = ["//bazel/windows:cel-cpp.patch"],
-+)
-+
-+single_version_override(
-+    module_name = "libevent",
-+    patch_strip = 1,
-+    patches = ["//bazel/windows:libevent.patch"],
 +)
 +
 +single_version_override(
@@ -61,35 +47,9 @@ index e463b0bb83..7ccad876d4 100644
 +    patches = ["//bazel/windows:proto-converter.patch"],
 +)
 +
-+single_version_override(
-+    module_name = "quiche",
-+    patch_strip = 1,
-+    patches = ["//bazel/windows:quiche.patch"],
-+)
-+
  # testing/debugging
  # local_path_override(
  #     module_name = "envoy_toolshed",
-@@ -195,7 +240,7 @@ use_repo(grcov_ext, "grcov")
- # Prebuilt wee8 (V8) static library, selected via the //bazel:v8_engine flag.
- wee8_ext = use_extension("@envoy_toolshed//v8:extensions.bzl", "wee8_prebuilt_extension")
- wee8_ext.setup()
--use_repo(wee8_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_prebuilt_aarch64")
-+use_repo(wee8_ext, "wee8_prebuilt_aarch64", "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx")
- 
- llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
- llvm.cxx_cross_lib(
-@@ -370,9 +415,9 @@ register_toolchains("@rust_toolchains//:all")
- 
- crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
- crate.annotation(
-+    build_script_rundir = ".",
-     crate = "ring",
-     repositories = ["envoy_rust_crate_index"],
--    build_script_rundir = ".",
- )
- crate.from_cargo(
-     name = "envoy_rust_crate_index",
 diff --git a/bazel/BUILD b/bazel/BUILD
 index 96d9c78443..83e20b135b 100644
 --- a/bazel/BUILD
@@ -191,10 +151,10 @@ index 2adc5df036..5ffbd56823 100644
  
 diff --git a/bazel/windows/BUILD b/bazel/windows/BUILD
 new file mode 100644
-index 0000000000..75aab19ac8
+index 0000000000..b7effcb961
 --- /dev/null
 +++ b/bazel/windows/BUILD
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,40 @@
 +load("@rules_foreign_cc//foreign_cc:configure.bzl", "configure_make")
 +load("//bazel:envoy_build_system.bzl", "envoy_package")
 +
@@ -205,10 +165,8 @@ index 0000000000..75aab19ac8
 +exports_files([
 +    "cel-cpp.patch",
 +    "dlfcn_win32.BUILD",
-+    "libevent.patch",
 +    "luajit.patch",
 +    "proto-converter.patch",
-+    "quiche.patch",
 +])
 +
 +configure_make(
@@ -268,25 +226,6 @@ index 0000000000..be376c77ef
 +    srcs = glob(["**"]),
 +    visibility = ["//visibility:public"],
 +)
-diff --git a/bazel/windows/libevent.patch b/bazel/windows/libevent.patch
-new file mode 100644
-index 0000000000..917ce9d628
---- /dev/null
-+++ b/bazel/windows/libevent.patch
-@@ -0,0 +1,13 @@
-+diff --git a/evconfig-private.h b/evconfig-private.h
-+--- a/evconfig-private.h
-++++ b/evconfig-private.h
-+@@ -8,5 +8,8 @@
-+ #elif defined(__APPLE__)
-+ #include "evconfig-private_apple.h"
-+ #elif defined(_MSC_VER)
-+-// No file needed for MSVC.
-++// Match the byte order supplied by the CMake build for sha1.c on Windows.
-++#ifndef LITTLE_ENDIAN
-++#define LITTLE_ENDIAN 1
-++#endif
-+ #endif
 diff --git a/bazel/windows/luajit.patch b/bazel/windows/luajit.patch
 new file mode 100644
 index 0000000000..58ebc326f9
@@ -403,27 +342,6 @@ index 0000000000..853d5b57e2
 + config_setting(
 +     name = "aarch64",
 +     values = {"cpu": "linux-aarch_64"},
-diff --git a/bazel/windows/quiche.patch b/bazel/windows/quiche.patch
-new file mode 100644
-index 0000000000..99f3a48a75
---- /dev/null
-+++ b/bazel/windows/quiche.patch
-@@ -0,0 +1,15 @@
-+diff --git a/quiche_overlay.bzl b/quiche_overlay.bzl
-+--- a/quiche_overlay.bzl
-++++ b/quiche_overlay.bzl
-+@@ -6,4 +6,10 @@
-+     "-Wno-old-style-cast",
-+     # Envoy build should not fail if a dependency has a warning.
-+     "-Wno-error",
-+-]
-++] + select({
-++    # Envoy platform headers include windows.h before winsock2.h.
-++    "@platforms//os:windows": [
-++        "-DWIN32_LEAN_AND_MEAN",
-++    ],
-++    "//conditions:default": [],
-++})
 diff --git a/bazelrc.windows b/bazelrc.windows
 index 3ed933759a..d9be2388ff 100644
 --- a/bazelrc.windows
@@ -440,18 +358,6 @@ index 3ed933759a..d9be2388ff 100644
 +build:windows --per_file_copt=external/cel-cpp.*/.*@/DNOGDI
  build:windows --verbose_failures
  build:windows --curses=no
-diff --git a/envoy/api/io_error.h b/envoy/api/io_error.h
-index fb12ee3d16..bcd3463278 100644
---- a/envoy/api/io_error.h
-+++ b/envoy/api/io_error.h
-@@ -6,6 +6,7 @@
- #include <string>
- #include <utility>
- 
-+#include "envoy/common/platform.h"
- #include "envoy/common/pure.h"
- 
- namespace Envoy {
 diff --git a/envoy/common/platform.h b/envoy/common/platform.h
 index 91721d3f87..b7e60b61cd 100644
 --- a/envoy/common/platform.h
