@@ -1,5 +1,5 @@
 diff --git a/MODULE.bazel b/MODULE.bazel
-index 57b3e596ed..8e8d7f2c1f 100644
+index 57b3e596ed..37c41891a9 100644
 --- a/MODULE.bazel
 +++ b/MODULE.bazel
 @@ -120,6 +120,21 @@ bazel_dep(name = "zipkin-api", version = "1.0.0.bcr.1")
@@ -24,6 +24,26 @@ index 57b3e596ed..8e8d7f2c1f 100644
  ####################################################################################
  # deps: Dev
  ####################################################################################
+@@ -370,6 +385,7 @@ go_sdk.download(
+         "linux_arm64": ("go1.27.1.linux-arm64.tar.gz", "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec"),
+         "darwin_arm64": ("go1.27.1.darwin-arm64.tar.gz", "ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12"),
+         "darwin_amd64": ("go1.27.1.darwin-amd64.tar.gz", "8f8f52c6649542cf027bbc9b9c68d1ec042f9f34808a40413f0b8b3f66f3caa4"),
++        "windows_amd64": ("go1.27.1.windows-amd64.zip", "a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d"),
+     },
+     version = "1.27.1",
+ )
+diff --git a/api/MODULE.bazel b/api/MODULE.bazel
+index d7cb292dc8..553a81ecd7 100644
+--- a/api/MODULE.bazel
++++ b/api/MODULE.bazel
+@@ -101,6 +101,7 @@ go_sdk.download(
+         "linux_arm64": ("go1.27.1.linux-arm64.tar.gz", "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec"),
+         "darwin_arm64": ("go1.27.1.darwin-arm64.tar.gz", "ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12"),
+         "darwin_amd64": ("go1.27.1.darwin-amd64.tar.gz", "8f8f52c6649542cf027bbc9b9c68d1ec042f9f34808a40413f0b8b3f66f3caa4"),
++        "windows_amd64": ("go1.27.1.windows-amd64.zip", "a3911b5e0e1b1053f25ed0675f4c1c6aad1e2bfcf253df2b9be4caabd2edd95d"),
+     },
+     version = "1.27.1",
+ )
 diff --git a/bazel/deps.yaml b/bazel/deps.yaml
 index ed30927433..5b0d6e06eb 100644
 --- a/bazel/deps.yaml
