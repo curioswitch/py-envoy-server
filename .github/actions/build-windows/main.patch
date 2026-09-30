@@ -712,35 +712,3 @@ index 3c78a507a2..469485a46b 100644
  }
  
  } // namespace DynamicModules
-diff --git a/source/extensions/formatter/cel/BUILD b/source/extensions/formatter/cel/BUILD
-index c504e32252..89667c411b 100644
---- a/source/extensions/formatter/cel/BUILD
-+++ b/source/extensions/formatter/cel/BUILD
-@@ -24,11 +24,11 @@ envoy_cc_library(
-         "//source/common/formatter:substitution_formatter_lib",
-         "//source/common/protobuf:utility_lib",
-         "//source/extensions/filters/common/expr:evaluator_lib",
-+        "@cel-cpp//eval/public:value_export_util",
-     ] + select(
-         {
-             "//bazel:windows_x86_64": [],
-             "//conditions:default": [
--                "@cel-cpp//eval/public:value_export_util",
-                 "@cel-cpp//parser",
-             ],
-         },
-diff --git a/source/extensions/formatter/cel/cel.cc b/source/extensions/formatter/cel/cel.cc
-index 2976485171..ccedef3043 100644
---- a/source/extensions/formatter/cel/cel.cc
-+++ b/source/extensions/formatter/cel/cel.cc
-@@ -5,8 +5,9 @@
- #include "source/common/http/utility.h"
- #include "source/common/protobuf/utility.h"
- 
--#if defined(USE_CEL_PARSER)
- #include "eval/public/value_export_util.h"
-+
-+#if defined(USE_CEL_PARSER)
- #include "parser/parser.h"
- #endif
- 
