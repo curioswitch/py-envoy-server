@@ -1,5 +1,5 @@
 diff --git a/MODULE.bazel b/MODULE.bazel
-index 57b3e596ed..37c41891a9 100644
+index fccdeed8fc..13f0e81499 100644
 --- a/MODULE.bazel
 +++ b/MODULE.bazel
 @@ -120,6 +120,21 @@ bazel_dep(name = "zipkin-api", version = "1.0.0.bcr.1")
@@ -24,7 +24,21 @@ index 57b3e596ed..37c41891a9 100644
  ####################################################################################
  # deps: Dev
  ####################################################################################
-@@ -370,6 +385,7 @@ go_sdk.download(
+@@ -157,6 +172,13 @@ single_version_override(
+     version = "3.5.7.envoy",
+ )
+ 
++# TODO: Remove once the registry links the LuaJIT VM object on Windows.
++single_version_override(
++    module_name = "luajit",
++    patch_strip = 1,
++    patches = ["//bazel/windows:luajit.patch"],
++)
++
+ # testing/debugging
+ # local_path_override(
+ #     module_name = "envoy_toolshed",
+@@ -370,6 +392,7 @@ go_sdk.download(
          "linux_arm64": ("go1.27.1.linux-arm64.tar.gz", "3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec"),
          "darwin_arm64": ("go1.27.1.darwin-arm64.tar.gz", "ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12"),
          "darwin_amd64": ("go1.27.1.darwin-amd64.tar.gz", "8f8f52c6649542cf027bbc9b9c68d1ec042f9f34808a40413f0b8b3f66f3caa4"),
@@ -33,7 +47,7 @@ index 57b3e596ed..37c41891a9 100644
      version = "1.27.1",
  )
 diff --git a/api/MODULE.bazel b/api/MODULE.bazel
-index d7cb292dc8..553a81ecd7 100644
+index 6bc8aac2ef..fa706605ac 100644
 --- a/api/MODULE.bazel
 +++ b/api/MODULE.bazel
 @@ -101,6 +101,7 @@ go_sdk.download(
@@ -98,10 +112,10 @@ index 46d0a69f0b..afa7400c6d 100644
  
 diff --git a/bazel/windows/BUILD b/bazel/windows/BUILD
 new file mode 100644
-index 0000000000..018daedda6
+index 0000000000..83ef9d7fff
 --- /dev/null
 +++ b/bazel/windows/BUILD
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +load("@rules_foreign_cc//foreign_cc:configure.bzl", "configure_make")
 +load("//bazel:envoy_build_system.bzl", "envoy_package")
 +
@@ -109,7 +123,10 @@ index 0000000000..018daedda6
 +
 +envoy_package()
 +
-+exports_files(["dlfcn_win32.BUILD"])
++exports_files([
++    "dlfcn_win32.BUILD",
++    "luajit.patch",
++])
 +
 +configure_make(
 +    name = "dlfcn_win32",
@@ -135,6 +152,38 @@ index 0000000000..be376c77ef
 +    srcs = glob(["**"]),
 +    visibility = ["//visibility:public"],
 +)
+diff --git a/bazel/windows/luajit.patch b/bazel/windows/luajit.patch
+new file mode 100644
+index 0000000000..d0a00412e1
+--- /dev/null
++++ b/bazel/windows/luajit.patch
+@@ -0,0 +1,26 @@
++diff --git a/BUILD.bazel b/BUILD.bazel
++--- a/BUILD.bazel
+++++ b/BUILD.bazel
++@@ -385,8 +385,8 @@ cc_library(
++     ] + glob([
++         "src/lj_*.h",
++     ]) + select({
++-        # Generated VM assembly
++-        ":windows_x86_64": [],
+++        # Generated VM assembly, an object file on Windows
+++        ":windows_x86_64": [":lj_vm_obj"],
++         "//conditions:default": [":lj_vm_s"],
++     }),
++     hdrs = [
++@@ -403,11 +403,6 @@ cc_library(
++         ":lj_recdef_h",
++         ":lj_folddef_h",
++     ],
++-    deps = select({
++-        # Generated VM assembly on Windows is an .obj file
++-        ":windows_x86_64": [":lj_vm_obj"],
++-        "//conditions:default": [],
++-    }),
++     copts = [
++         "-O2",
++         "-fomit-frame-pointer",
 diff --git a/source/common/api/win32/os_sys_calls_impl.cc b/source/common/api/win32/os_sys_calls_impl.cc
 index f97586b9ed..820e13d23d 100644
 --- a/source/common/api/win32/os_sys_calls_impl.cc
@@ -161,10 +210,10 @@ index f97586b9ed..820e13d23d 100644
    return {rc, rc != -1 ? 0 : ::WSAGetLastError()};
  }
 diff --git a/source/extensions/dynamic_modules/BUILD b/source/extensions/dynamic_modules/BUILD
-index 9799f4e4ae..d1ed4875c0 100644
+index ae7ed78518..58627b4625 100644
 --- a/source/extensions/dynamic_modules/BUILD
 +++ b/source/extensions/dynamic_modules/BUILD
-@@ -48,7 +48,10 @@ envoy_cc_library(
+@@ -49,7 +49,10 @@ envoy_cc_library(
          "@abseil-cpp//absl/types:span",
          "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
          "@envoy_api//envoy/extensions/dynamic_modules/v3:pkg_cc_proto",
@@ -712,3 +761,35 @@ index 3c78a507a2..469485a46b 100644
  }
  
  } // namespace DynamicModules
+diff --git a/source/extensions/formatter/cel/BUILD b/source/extensions/formatter/cel/BUILD
+index 89667c411b..c504e32252 100644
+--- a/source/extensions/formatter/cel/BUILD
++++ b/source/extensions/formatter/cel/BUILD
+@@ -24,11 +24,11 @@ envoy_cc_library(
+         "//source/common/formatter:substitution_formatter_lib",
+         "//source/common/protobuf:utility_lib",
+         "//source/extensions/filters/common/expr:evaluator_lib",
+-        "@cel-cpp//eval/public:value_export_util",
+     ] + select(
+         {
+             "//bazel:windows_x86_64": [],
+             "//conditions:default": [
++                "@cel-cpp//eval/public:value_export_util",
+                 "@cel-cpp//parser",
+             ],
+         },
+diff --git a/source/extensions/formatter/cel/cel.cc b/source/extensions/formatter/cel/cel.cc
+index ccedef3043..2976485171 100644
+--- a/source/extensions/formatter/cel/cel.cc
++++ b/source/extensions/formatter/cel/cel.cc
+@@ -5,9 +5,8 @@
+ #include "source/common/http/utility.h"
+ #include "source/common/protobuf/utility.h"
+ 
+-#include "eval/public/value_export_util.h"
+-
+ #if defined(USE_CEL_PARSER)
++#include "eval/public/value_export_util.h"
+ #include "parser/parser.h"
+ #endif
+ 
