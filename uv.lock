@@ -37,7 +37,7 @@ wheels = [
 
 [[package]]
 name = "envoy-server"
-version = "1.40.1"
+version = "1.40.2"
 source = { editable = "." }
 
 [package.dev-dependencies]
