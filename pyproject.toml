@@ -3,7 +3,7 @@ name = "envoy-server"
 version = "1.40.2"
 description = "A Python wheel distribution of the Envoy server"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "CurioSwitch" }]
@@ -17,11 +17,13 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Programming Language :: Python :: Free Threading",
   "Topic :: Internet :: Proxy Servers",
   "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
   "Topic :: System :: Networking",
@@ -38,14 +40,16 @@ envoy = "envoy._main:main"
 
 [dependency-groups]
 dev = [
-  "httpx",
-  "poethepoet",
-  "pyqwest",
-  "pyright[nodejs]",
-  "pytest",
-  "ruff",
-  "toml",
-  "wheel",
+  "httpx==0.28.1",
+  "poethepoet==0.37.0",
+  "pyqwest==0.14.0",
+  "pyright[nodejs]==1.1.407",
+  "pytest==9.0.1",
+  # Used in setup_it.py, not directly, keeping it here allows renovate for free.
+  "pyvoy==1.4.0",
+  "ruff==0.14.6",
+  "toml==0.10.2",
+  "wheel==0.45.1",
 ]
 
 [build-system]
@@ -182,6 +186,12 @@ typing-extensions = false
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
 split-on-trailing-comma = false
+
+[tool.uv]
+# pyvoy is only installed so setup_it.py can read its version. pyvoy pins
+# envoy-server, which is this project, so ignore its dependencies to keep
+# resolution working when bumping the Envoy version before a pyvoy release.
+dependency-metadata = [{ name = "pyvoy", requires-dist = [] }]
 
 [tool.uv.build-backend]
 module-name = "envoy"
