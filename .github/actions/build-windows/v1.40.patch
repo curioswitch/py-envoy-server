@@ -698,3 +698,135 @@ index c8b0ed7921..7e67ea0ecc 100644
  }
  
  } // namespace DynamicModules
+diff --git a/bazel/extension_configs.bzl b/bazel/extension_configs.bzl
+index b9b0eb0252..8c11fe5f32 100644
+--- a/bazel/extension_configs.bzl
++++ b/bazel/extension_configs.bzl
+@@ -11,11 +11,7 @@ WINDOWS_SKIP_TARGETS = [
+     "envoy.tracers.datadog",
+     "envoy.watchdog.backtrace_action",
+     "envoy.resource_monitors.cpu_utilization",
+-    "envoy.access_loggers.extension_filters.cel",
+-    "envoy.rate_limit_descriptors.expr",
+     "envoy.filters.http.rate_limit_quota",
+-    "envoy.matching.inputs.cel_data_input",
+-    "envoy.matching.matchers.cel_matcher",
+     "envoy.access_loggers.wasm",
+     "envoy.bootstrap.wasm",
+     "envoy.filters.http.wasm",
+diff --git a/source/extensions/access_loggers/filters/cel/BUILD b/source/extensions/access_loggers/filters/cel/BUILD
+index dc52bfce07..1af38b760b 100644
+--- a/source/extensions/access_loggers/filters/cel/BUILD
++++ b/source/extensions/access_loggers/filters/cel/BUILD
+@@ -29,7 +29,6 @@ envoy_cc_extension(
+     srcs = ["config.cc"],
+     hdrs = ["config.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],  # TODO: fix the windows ANTLR build
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -52,7 +51,6 @@ envoy_cc_extension(
+         "@envoy_api//envoy/extensions/access_loggers/filters/cel/v3:pkg_cc_proto",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
+diff --git a/source/extensions/filters/http/ext_proc/BUILD b/source/extensions/filters/http/ext_proc/BUILD
+index 7237a4d2eb..e8ffc42597 100644
+--- a/source/extensions/filters/http/ext_proc/BUILD
++++ b/source/extensions/filters/http/ext_proc/BUILD
+@@ -110,7 +110,6 @@ envoy_cc_library(
+     srcs = ["matching_utils.cc"],
+     hdrs = ["matching_utils.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -122,7 +121,6 @@ envoy_cc_library(
+         "@cel-cpp//eval/public:cel_expr_builder_factory",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
+diff --git a/source/extensions/filters/network/ext_proc/BUILD b/source/extensions/filters/network/ext_proc/BUILD
+index 3946ebd16f..f2079c6197 100644
+--- a/source/extensions/filters/network/ext_proc/BUILD
++++ b/source/extensions/filters/network/ext_proc/BUILD
+@@ -27,7 +27,6 @@ envoy_cc_library(
+     srcs = ["matching_utils.cc"],
+     hdrs = ["matching_utils.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -42,7 +41,6 @@ envoy_cc_library(
+         "@cel-cpp//eval/public:cel_expr_builder_factory",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
+diff --git a/source/extensions/formatter/cel/BUILD b/source/extensions/formatter/cel/BUILD
+index 89667c411b..26ce70ef3c 100644
+--- a/source/extensions/formatter/cel/BUILD
++++ b/source/extensions/formatter/cel/BUILD
+@@ -14,7 +14,6 @@ envoy_cc_library(
+     srcs = ["cel.cc"],
+     hdrs = ["cel.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],  # TODO: fix the windows ANTLR build
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -27,7 +26,6 @@ envoy_cc_library(
+         "@cel-cpp//eval/public:value_export_util",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
+@@ -40,7 +38,6 @@ envoy_cc_extension(
+     srcs = ["config.cc"],
+     hdrs = ["config.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],  # TODO: fix the windows ANTLR build
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -57,7 +54,6 @@ envoy_cc_extension(
+         "@envoy_api//envoy/extensions/formatter/cel/v3:pkg_cc_proto",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
+diff --git a/source/extensions/rate_limit_descriptors/expr/BUILD b/source/extensions/rate_limit_descriptors/expr/BUILD
+index 9baad9de8d..f0c537bb13 100644
+--- a/source/extensions/rate_limit_descriptors/expr/BUILD
++++ b/source/extensions/rate_limit_descriptors/expr/BUILD
+@@ -13,7 +13,6 @@ envoy_cc_extension(
+     srcs = ["config.cc"],
+     hdrs = ["config.h"],
+     copts = select({
+-        "//bazel:windows_x86_64": [],  # TODO: fix the windows ANTLR build
+         "//conditions:default": [
+             "-DUSE_CEL_PARSER",
+         ],
+@@ -26,7 +25,6 @@ envoy_cc_extension(
+         "@envoy_api//envoy/extensions/rate_limit_descriptors/expr/v3:pkg_cc_proto",
+     ] + select(
+         {
+-            "//bazel:windows_x86_64": [],
+             "//conditions:default": [
+                 "@cel-cpp//parser",
+             ],
