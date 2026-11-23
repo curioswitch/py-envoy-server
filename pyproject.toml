@@ -41,15 +41,15 @@ envoy = "envoy._main:main"
 [dependency-groups]
 dev = [
   "httpx==0.28.1",
-  "poethepoet==0.37.0",
+  "poethepoet==0.49.0",
   "pyqwest==0.14.0",
-  "pyright[nodejs]==1.1.407",
-  "pytest==9.0.1",
+  "pyright[nodejs]==1.1.414",
+  "pytest==9.2.0",
   # Used in setup_it.py, not directly, keeping it here allows renovate for free.
-  "pyvoy==1.4.0",
-  "ruff==0.14.6",
+  "pyvoy==1.5.1",
+  "ruff==0.17.6",
   "toml==0.10.2",
-  "wheel==0.45.1",
+  "wheel==0.48.0",
 ]
 
 [build-system]
